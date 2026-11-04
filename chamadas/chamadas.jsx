@@ -362,6 +362,18 @@ function CallsApp() {
   );
 }
 
+/*
+  Service worker: dá o "instalar na tela inicial" e o abrir sem rede.
+  Só em produção — no dev ele guardaria os módulos do Vite e atrapalharia o HMR.
+*/
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      /* sem service worker o app segue funcionando, só não fica instalável */
+    });
+  });
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <CallsApp />
