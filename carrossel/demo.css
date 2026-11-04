@@ -1,0 +1,93 @@
+/*
+  Página de demonstração da roda (index.html desta pasta).
+  Nada aqui é necessário para usar o componente: é só o palco.
+
+  A rampa é a mesma do cnbr.space: parte de `--accent-base` e mistura com
+  branco (20/40/60/80) e preto (120) em oklch.
+*/
+
+:root {
+  --accent-base: oklch(87% 0.3 143);
+
+  --accent120: color-mix(in oklch, var(--accent-base) 70%, black);
+  --accent100: var(--accent-base);
+  --accent80: color-mix(in oklch, var(--accent-base) 80%, white);
+  --accent60: color-mix(in oklch, var(--accent-base) 60%, white);
+  --accent40: color-mix(in oklch, var(--accent-base) 40%, white);
+  --accent20: color-mix(in oklch, var(--accent-base) 20%, white);
+
+  --bg-dark: color-mix(in oklch, var(--accent-base) 5%, #0f0f0f);
+  --bg-glow: color-mix(in oklch, var(--accent-base) 18%, transparent);
+  --accent-overlay: color-mix(in oklch, var(--accent-base) 30%, transparent);
+  --accent-overlay-hover: color-mix(in oklch, var(--accent-base) 40%, transparent);
+
+  --text-light: #fff;
+  --text-muted: #a9a9a9;
+}
+
+html {
+  background-color: var(--bg-dark);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: transparent;
+  color: var(--text-light);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.demo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 100dvh;
+  padding: 48px 16px;
+  box-sizing: border-box;
+}
+
+.demo::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(1000px 460px at 50% -12%, var(--bg-glow), transparent 72%),
+    radial-gradient(700px 520px at 50% 108%, var(--accent-overlay), transparent 70%);
+}
+
+.demo > * {
+  position: relative;
+  z-index: 1;
+}
+
+.demo__wheel {
+  /* sem largura própria o .theme-wheel (width: 100%) mediria 0 e o raio cairia
+     no fallback, perdendo a escala responsiva */
+  width: min(100%, 420px);
+}
+
+.demo__wheel .theme-wheel {
+  margin: 0;
+}
+
+.demo__label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.demo__hint {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: center;
+}

@@ -1,0 +1,10 @@
+{
+  "name": "ChatNoirBrasil",
+  "short_name": "CNBR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050b07",
+  "theme_color": "#000000",
+  "lang": "pt-BR",
+  "description": "Site criado por fãs para fãs, com informações sobre Miraculous: As Aventuras de Ladybug e Chat Noir."
+}

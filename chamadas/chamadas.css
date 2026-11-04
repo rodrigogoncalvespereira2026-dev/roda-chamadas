@@ -1,0 +1,597 @@
+/*
+  Roda de Chamadas (chamadas/index.html).
+
+  Paleta derivada do acento do contato escolhido, com a mesma fórmula do site:
+  tons claros são mistura com branco (20/40/60/80) e o 120 é mistura com preto,
+  em oklch. O acento é trocado por inline style no <main> e no overlay da
+  chamada, então a página inteira acompanha o contato.
+*/
+
+:root {
+  --accent-base: oklch(87% 0.3 143);
+
+  --accent120: color-mix(in oklch, var(--accent-base) 70%, black);
+  --accent100: var(--accent-base);
+  --accent80: color-mix(in oklch, var(--accent-base) 80%, white);
+  --accent60: color-mix(in oklch, var(--accent-base) 60%, white);
+  --accent40: color-mix(in oklch, var(--accent-base) 40%, white);
+  --accent20: color-mix(in oklch, var(--accent-base) 20%, white);
+
+  --bg-dark: color-mix(in oklch, var(--accent-base) 5%, #0f0f0f);
+  --bg-glow: color-mix(in oklch, var(--accent-base) 18%, transparent);
+  --accent-overlay: color-mix(in oklch, var(--accent-base) 30%, transparent);
+  --accent-overlay-hover: color-mix(in oklch, var(--accent-base) 40%, transparent);
+
+  --text-light: #fff;
+  --text-muted: #a9a9a9;
+  --danger: #e63946;
+
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* o acento também é redefinido aqui: o inline style do contato precisa
+   rederivar a rampa, não só a cor base */
+.calls,
+.call {
+  --accent120: color-mix(in oklch, var(--accent-base) 70%, black);
+  --accent100: var(--accent-base);
+  --accent80: color-mix(in oklch, var(--accent-base) 80%, white);
+  --accent60: color-mix(in oklch, var(--accent-base) 60%, white);
+  --accent40: color-mix(in oklch, var(--accent-base) 40%, white);
+  --accent20: color-mix(in oklch, var(--accent-base) 20%, white);
+
+  --surface: color-mix(in oklch, var(--accent-base) 5%, #0f0f0f);
+  --surface-2: color-mix(in oklch, var(--accent-base) 8%, #151515);
+  --line: color-mix(in oklch, var(--accent-base) 16%, transparent);
+  --overlay: color-mix(in oklch, var(--accent-base) 30%, transparent);
+  --overlay-hover: color-mix(in oklch, var(--accent-base) 40%, transparent);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: #0a0a0a;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--text-light);
+}
+
+/* ---------- página ---------- */
+
+.calls {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  width: min(100%, 960px);
+  margin: 0 auto;
+  padding: 56px 20px 80px;
+}
+
+.calls::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 420px at 50% -10%, var(--bg-glow), transparent 72%),
+    radial-gradient(700px 520px at 50% 112%, var(--overlay), transparent 70%),
+    var(--bg-dark);
+}
+
+.calls > * {
+  position: relative;
+  z-index: 1;
+}
+
+.calls__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.calls__eyebrow {
+  margin: 0;
+  color: var(--accent80);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.calls__head h1 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.calls__sub {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---------- roda ---------- */
+
+.calls__wheel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.calls__label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.calls__wheelBox {
+  width: min(100%, 420px);
+  padding: 8px 0 4px;
+}
+
+.calls__wheelBox .theme-wheel {
+  margin: 0;
+}
+
+.calls__selection {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(100%, 460px);
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface-2);
+}
+
+.calls__avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--overlay);
+  color: var(--accent100);
+}
+
+.calls__avatar svg {
+  width: 56%;
+  height: 56%;
+  color: inherit;
+}
+
+.calls__who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.calls__who strong {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.calls__who > span {
+  color: var(--accent60);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.calls__callBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent100);
+  color: #08120b;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 26px var(--overlay);
+}
+
+.calls__callBtn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.calls__callBtn:hover {
+  background: var(--accent80);
+}
+
+.calls__callBtn:focus-visible {
+  outline: 2px solid var(--accent20);
+  outline-offset: 3px;
+}
+
+.calls__hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ---------- contatos ---------- */
+
+.calls__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calls__listHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calls__listHead h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.calls__search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  min-width: 220px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+.calls__search svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.calls__search input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.calls__search input::placeholder {
+  color: var(--text-muted);
+}
+
+.calls__search:focus-within {
+  border-color: var(--accent60);
+}
+
+.calls__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calls__contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 10px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text-light);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.calls__contact .calls__avatar {
+  width: 48px;
+  height: 48px;
+  background: color-mix(in oklch, var(--accent-base) 12%, transparent);
+  border-color: color-mix(in oklch, var(--accent-base) 26%, transparent);
+}
+
+.calls__contact:hover {
+  border-color: var(--accent60);
+  background: var(--overlay);
+}
+
+.calls__contact[aria-pressed="true"] {
+  border-color: var(--accent100);
+  background: var(--overlay);
+  box-shadow: 0 0 0 1px var(--accent100) inset;
+}
+
+.calls__contact:focus-visible {
+  outline: 2px solid var(--accent80);
+  outline-offset: 2px;
+}
+
+.calls__empty {
+  margin: 0;
+  padding: 22px 0;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+/* ---------- chamada ---------- */
+
+.call {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  background: color-mix(in oklch, var(--accent-base) 6%, #050505);
+  animation: call-in 0.22s ease-out both;
+}
+
+.call__glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(700px 520px at 50% 22%, var(--overlay), transparent 72%),
+    radial-gradient(600px 400px at 50% 108%, color-mix(in oklch, var(--accent-base) 18%, transparent), transparent 70%);
+}
+
+.call > *:not(.call__glow) {
+  position: relative;
+  z-index: 1;
+}
+
+.call__badge {
+  margin: 0;
+  color: var(--accent80);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.call__avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  margin: 18px 0 6px;
+  border: 2px solid var(--accent100);
+  border-radius: 50%;
+  background: var(--overlay);
+  box-shadow: 0 0 60px var(--overlay);
+}
+
+.call__icon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--accent100);
+}
+
+.call__icon svg {
+  width: 54%;
+  height: 54%;
+}
+
+.call__ring {
+  position: absolute;
+  inset: -10px;
+  border: 2px solid var(--accent100);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.call[data-phase="ringing"] .call__ring {
+  animation: call-ring 2s ease-out infinite;
+}
+
+.call[data-phase="ringing"] .call__ring:nth-child(2) {
+  animation-delay: 1s;
+}
+
+.call[data-phase="active"] .call__ring {
+  opacity: 0.35;
+  animation: none;
+}
+
+.call__name {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.call__status {
+  margin: 0;
+  color: var(--accent60);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.call__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.call__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: 78px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.call__btn svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  padding: 15px;
+  box-sizing: content-box;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 30%, transparent);
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--accent-base) 12%, transparent);
+  color: var(--accent80);
+}
+
+.call__btn[aria-pressed="true"] svg {
+  border-color: var(--accent100);
+  background: var(--accent100);
+  color: #08120b;
+}
+
+.call__btn--end svg {
+  border-color: color-mix(in oklch, var(--danger) 70%, transparent);
+  background: var(--danger);
+  color: #fff;
+}
+
+.call__btn:hover svg {
+  border-color: var(--accent100);
+}
+
+.call__btn--end:hover svg {
+  border-color: #ff8590;
+}
+
+.call__btn:focus-visible {
+  outline: none;
+}
+
+.call__btn:focus-visible svg {
+  outline: 2px solid var(--accent80);
+  outline-offset: 3px;
+}
+
+.call__btn span {
+  color: var(--text-muted);
+}
+
+.call__note {
+  max-width: 40ch;
+  margin: 26px 0 0;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+@keyframes call-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes call-ring {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .call,
+  .call[data-phase="ringing"] .call__ring {
+    animation: none;
+  }
+
+  .call[data-phase="ringing"] .call__ring {
+    opacity: 0.4;
+  }
+}
+
+@media (max-width: 520px) {
+  .calls {
+    padding: 36px 14px 64px;
+    gap: 30px;
+  }
+
+  .calls__selection {
+    flex-wrap: wrap;
+  }
+
+  .calls__callBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .calls__search {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .calls__grid {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  }
+
+  .call__btn {
+    width: 64px;
+  }
+}

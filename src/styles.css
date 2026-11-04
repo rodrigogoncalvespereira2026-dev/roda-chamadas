@@ -1,0 +1,762 @@
+/* =====================================================================
+   CNBR — sistema de temas
+   Cada tema é só um bloco de CSS custom properties. O React troca
+   `data-theme` no <html> e a página inteira repinta sozinha.
+
+   Detalhe importante: NENHUMA propriedade pintada com var() de tema recebe
+   `transition`. No Chromium, transicionar uma cor vinda de custom property
+   (mesmo registrada com @property) trava o valor pintado — ele fica uma
+   troca de tema atrasado. Por isso a troca de cores é instantânea e as
+   transições ficam só em transform/opacity/filter, que não dependem do tema.
+   ===================================================================== */
+
+/* ---------- 0. Cores animáveis ---------- */
+
+@property --accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #22c55e;
+}
+
+@property --accent-glow {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(34, 197, 94, 0.5);
+}
+
+@property --accent-soft {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(34, 197, 94, 0.14);
+}
+
+@property --bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #050b07;
+}
+
+@property --bg-glow {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(34, 197, 94, 0.18);
+}
+
+@property --surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0d1611;
+}
+
+@property --surface-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #142019;
+}
+
+@property --border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.07);
+}
+
+@property --text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #eef4f0;
+}
+
+@property --text-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #94a69b;
+}
+
+@property --accent-base {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: oklch(87% 0.3 143);
+}
+
+@property --footer-gradient-start {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: oklch(100% 0 0 / 0.5);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --radius-xl: 26px;
+
+  color-scheme: dark;
+  font-family: Inter, Roboto, "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- 1. Paletas ---------- */
+
+/*
+  Cada tema define SÓ a cor de destaque. Fundo, superfícies, bordas e textos
+  são derivados dela com color-mix, então os 20 temas ficam coerentes sem 20
+  blocos de dez linhas. Os nomes --accent40/60/80/100 e --accent-overlay são
+  os mesmos que a roda do site original usa.
+*/
+
+/*
+  Sistema de tokens do cnbr.space. Cada tema define só `--accent-base`; a rampa
+  é derivada dela misturando com branco (20/40/60/80) e com preto (120) em
+  oklch — os tons "apagados" do original são cores mais claras, não a mesma cor
+  com opacidade.
+*/
+
+:root {
+  --accent-base: oklch(87% 0.3 143);
+
+  --accent120: color-mix(in oklch, var(--accent-base) 70%, black);
+  --accent100: var(--accent-base);
+  --accent80: color-mix(in oklch, var(--accent-base) 80%, white);
+  --accent60: color-mix(in oklch, var(--accent-base) 60%, white);
+  --accent40: color-mix(in oklch, var(--accent-base) 40%, white);
+  --accent20: color-mix(in oklch, var(--accent-base) 20%, white);
+
+  --bg-light: color-mix(in oklch, var(--accent-base) 5%, #f0f0f0);
+  --bg-dark: color-mix(in oklch, var(--accent-base) 5%, #0f0f0f);
+
+  --text-light: #fff;
+  --text-dark: #000;
+
+  --selected: #fff3;
+  --inactive: #ffffff1a;
+  --layer: #ffffff0d;
+
+  --accent-overlay: color-mix(in oklch, var(--accent-base) 30%, transparent);
+  --accent-overlay-hover: color-mix(in oklch, var(--accent-base) 40%, transparent);
+
+  --favorite: #e63946;
+  --favorite-hover: #e95763;
+
+  --swaltext: #fff;
+  --swalbutton: var(--accent-base);
+  --swalshadow: color-mix(in oklch, var(--accent-base) 50%, transparent);
+  --footer-gradient-start: color-mix(in oklch, var(--accent-base) 50%, transparent);
+
+  /* apelidos usados pelo resto do projeto */
+  --accent: var(--accent-base);
+  --accent-soft: var(--accent-overlay);
+  --accent-glow: var(--swalshadow);
+  --bg: var(--bg-dark);
+  --bg-glow: color-mix(in oklch, var(--accent-base) 18%, transparent);
+  --surface: var(--bg-dark);
+  --surface-2: color-mix(in oklch, var(--accent-base) 7%, #161616);
+  --border: var(--layer);
+  --text: var(--text-light);
+  --text-muted: #a9a9a9;
+  --text-secondary: #a9a9a9;
+}
+
+/*
+  20 temas — mesmos ids e mesmas cores do cnbr.space. O valor é o
+  `--accent-base` do CSS do site, em oklch (L% C H), copiado tal como está lá.
+*/
+[data-theme="cat"], #cat { --accent-base: oklch(87% 0.3 143); }
+[data-theme="ladybug"], #ladybug { --accent-base: oklch(67% 0.2 25); }
+[data-theme="fox"], #fox { --accent-base: oklch(79% 0.17 71); }
+[data-theme="snake"], #snake { --accent-base: oklch(88% 0.17 169); }
+[data-theme="bee"], #bee { --accent-base: oklch(96% 0.21 110); --swaltext: #000; }
+[data-theme="butterfly"], #butterfly { --accent-base: oklch(63% 0.25 307); }
+[data-theme="peacock"], #peacock { --accent-base: oklch(60% 0.25 275); }
+[data-theme="dog"], #dog { --accent-base: oklch(75% 0.18 40); }
+[data-theme="bunny"], #bunny { --accent-base: oklch(82% 0.14 213); }
+[data-theme="rooster"], #rooster { --accent-base: oklch(70% 0.2 39); }
+[data-theme="pig"], #pig { --accent-base: oklch(85% 0.18 322); }
+[data-theme="goat"], #goat { --accent-base: oklch(100% 0 0); }
+[data-theme="ox"], #ox { --accent-base: oklch(60% 0.21 265); }
+[data-theme="turtle"], #turtle { --accent-base: oklch(86% 0.21 138); }
+[data-theme="dragon"], #dragon { --accent-base: oklch(67% 0.22 18); }
+[data-theme="tiger"], #tiger { --accent-base: oklch(60% 0.21 341); }
+[data-theme="horse"], #horse { --accent-base: oklch(52% 0.1 68); }
+[data-theme="monkey"], #monkey { --accent-base: oklch(75% 0.14 68); }
+[data-theme="mouse"], #mouse { --accent-base: oklch(80% 0 0); }
+[data-theme="uncanny"], #uncanny { --accent-base: oklch(75% 0.14 96); }
+
+/* ---------- 2. Base ---------- */
+
+/*
+  O fundo vai no <html> porque o <body> propaga a cor para o canvas do
+  viewport, e ali a troca de tema não repinta de forma confiável.
+*/
+html {
+  background-color: var(--bg);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: transparent;
+  color: var(--text);
+}
+
+.aurora {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(1000px 460px at 50% -12%, var(--bg-glow), transparent 72%),
+    radial-gradient(700px 520px at 50% 108%, var(--accent-soft), transparent 70%);
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- 3. Barra superior ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: min(1180px, calc(100% - 32px));
+  height: 66px;
+  margin: 16px auto 0;
+  padding: 12px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand-paw {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+
+.brand-name {
+  font-size: clamp(17px, 2vw, 24px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-badge {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #06140b;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-btn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.nav-btn[data-current="true"] {
+  color: var(--accent);
+}
+
+/* ---------- 4. Página ---------- */
+
+/* `main.profile` do site: coluna, gap de 2rem, conteúdo centrado */
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.profile-head {
+  text-align: center;
+}
+
+.profile-head h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: -0.02em;
+}
+
+.profile-head p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: clamp(14px, 1.6vw, 16px);
+}
+
+/* ---------- 5. Card de configurações ---------- */
+
+/* `.settings-card` do site */
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+  background-color: var(--bg-dark);
+  border-radius: 16px;
+}
+
+.settings-card h2 {
+  margin: 0 0 18px;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.field-label {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ---------- 7. Seletor de idioma ---------- */
+
+/* `.languages-options` do site */
+.lang-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.lang-item {
+  filter: grayscale(1);
+  cursor: pointer;
+  aspect-ratio: 1;
+  background-color: transparent;
+  border: none;
+  border-radius: 16px;
+  width: 3rem;
+  padding: 0;
+  transition: filter 0.2s;
+  overflow: hidden;
+}
+
+.lang-item:hover,
+.lang-item[data-active="true"] {
+  filter: grayscale(0);
+  background-color: transparent;
+}
+
+.lang-item[data-active="true"] {
+  outline: 2px solid var(--accent100);
+}
+
+.lang-item svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- 8. Acessibilidade e responsivo ---------- */
+
+.lang-item:focus-visible,
+.nav-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .brand-badge {
+    display: none;
+  }
+
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .page {
+    padding-top: 34px;
+  }
+
+  .settings-card {
+    padding: 22px 18px 24px;
+  }
+}
+
+/* ---------- 9. Rodapé ---------- */
+
+footer {
+  background: radial-gradient(120% 150% at 0% 0%, var(--footer-gradient-start) 0%, black 100%);
+  color: var(--text-light);
+  border-radius: 32px 32px 0 0;
+  font-weight: 300;
+  position: relative;
+  overflow: hidden;
+  margin-top: auto;
+}
+
+footer .content {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  justify-content: center;
+  gap: 1rem;
+  padding: 5rem 4rem 6rem;
+}
+
+footer .about {
+  text-align: center;
+  grid-column-start: 1;
+  margin-block: auto;
+}
+
+footer .about h2 {
+  font-size: clamp(20px, 2.4vw, 28px);
+  margin-bottom: 0.5rem;
+}
+
+footer .small {
+  color: #777;
+  font-size: 0.8rem;
+}
+
+footer .links {
+  grid-column-start: 3;
+  margin-inline: auto;
+  text-align: center;
+}
+
+footer .links h2 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+footer .links .socials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  max-width: 30rem;
+}
+
+footer .links .button {
+  background-color: var(--accent-overlay);
+  color: var(--accent100);
+  border-radius: 24px;
+  font-size: large;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+footer .links .button:hover {
+  background-color: var(--accent-overlay-hover);
+}
+
+footer .bottom {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+@media screen and (max-width: 1000px) {
+  footer .content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 3rem 1.5rem 5rem;
+  }
+
+  footer .about,
+  footer .links {
+    grid-column: 1;
+  }
+}
+
+/* ---------- 10. Lista de episódios ---------- */
+
+/*
+  Regras de `main.season` / `.episodio` do site. Nenhum componente as consome
+  ainda — ficam prontas para a lista de episódios.
+*/
+
+main.season {
+  gap: 1rem;
+  padding: 1rem 10rem;
+}
+
+#episode-list {
+  flex-direction: column;
+  gap: 1rem;
+  display: flex;
+}
+
+.episodio {
+  cursor: pointer;
+  background-color: var(--inactive);
+  border-radius: 16px;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+  padding: 1rem;
+  text-decoration: none;
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+}
+
+.episodio:hover {
+  background-color: var(--selected);
+  transform: scale(1.05);
+}
+
+.episodio h2 {
+  width: fit-content;
+}
+
+.episodio .image-wrapper {
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  height: 150px;
+  position: relative;
+  overflow: hidden;
+}
+
+.episodio .loader-wrapper {
+  z-index: 0;
+}
+
+.thumbnail img {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 16px;
+  height: 150px;
+}
+
+.watch-progress-overlay {
+  z-index: 1;
+  pointer-events: none;
+  flex-direction: column;
+  gap: 0.35rem;
+  display: flex;
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+}
+
+.watch-progress-label {
+  backdrop-filter: blur(8px);
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: #000000b8;
+  border-radius: 999px;
+  align-self: flex-start;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.watch-progress-bar {
+  background: #fff6;
+  border-radius: 999px;
+  height: 0.35rem;
+  overflow: hidden;
+  box-shadow: 0 0 16px #000;
+}
+
+.watch-progress-bar > div {
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent100), var(--accent120));
+  height: 100%;
+}
+
+.episodio .favorite-button {
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  color: var(--text-light);
+  opacity: 0.7;
+  z-index: 0;
+  background-color: #00000080;
+  border: none;
+  border-radius: 50%;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, color 0.2s;
+  display: flex;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.episodio .favorite-button.favorited {
+  color: var(--favorite);
+}
+
+.episodio .favorite-button:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.trailer {
+  background-color: var(--accent-overlay);
+  filter: opacity(75%);
+  transition: filter 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+.trailer:hover {
+  background-color: var(--accent-overlay);
+  filter: opacity(100%);
+}
+
+.episodio .info {
+  width: 100%;
+}
+
+.episodio .extras {
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  display: flex;
+}
+
+.episodio .date {
+  align-items: center;
+  gap: 0.5rem;
+  display: flex;
+}
+
+.episodio .date p {
+  color: #ccc;
+  font-size: 0.75rem;
+}
+
+.episodio .date img {
+  border-radius: 0.75rem;
+  height: 1.5rem;
+}
+
+.episodio .studios {
+  gap: 1rem;
+  display: flex;
+}
+
+.episodio .studios img {
+  height: 1.5rem;
+}
+
+.unavailable {
+  filter: grayscale(80%) opacity(50%);
+}
+
+.unavailable .thumbnail img,
+.trailer .thumbnail img {
+  background-color: var(--accent20);
+}
+
+@media screen and (max-width: 930px) {
+  .episodio {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  main.season {
+    padding: 1rem;
+  }
+}
+
+@media screen and (max-width: 350px) {
+  .episodio .extras {
+    flex-direction: column-reverse;
+    align-items: baseline;
+    gap: 1rem;
+  }
+}
+
+.watched-badge {
+  color: var(--text-light);
+  z-index: 2;
+  background: #0009;
+  border-radius: 999px;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  display: flex;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

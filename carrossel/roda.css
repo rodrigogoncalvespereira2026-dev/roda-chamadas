@@ -1,0 +1,143 @@
+/*
+  Roda de temas (carrossel) — CSS autossuficiente, portado do cnbr.space.
+
+  As regras são as do CSS de produção do site. A rampa de acentos é derivada
+  aqui mesmo, com a mesma fórmula deles: os tons claros são mistura com branco
+  (não a cor com opacidade) e o 120 é mistura com preto.
+
+  Cada opção recebe `--accent-base` do seu próprio tema por inline style (é o
+  que o site faz com as regras `#cat`, `#ladybug`, …), por isso a derivação
+  também está em `.theme-wheel__option`: assim a roda é multicolorida e o
+  cálculo acontece já com o acento local.
+
+  Contrato de tema — tudo opcional:
+    --accent-base   cor de destaque do tema (aceita `--accent` como apelido)
+  Se nada for definido, entra o verde do tema `cat`.
+*/
+
+.theme-wheel,
+.theme-wheel__option {
+  --wheel-accent: var(--accent-base, var(--accent, oklch(87% 0.3 143)));
+
+  --wheel-accent120: color-mix(in oklch, var(--wheel-accent) 70%, black);
+  --wheel-accent100: var(--wheel-accent);
+  --wheel-accent80: color-mix(in oklch, var(--wheel-accent) 80%, white);
+  --wheel-accent60: color-mix(in oklch, var(--wheel-accent) 60%, white);
+  --wheel-accent40: color-mix(in oklch, var(--wheel-accent) 40%, white);
+  --wheel-accent20: color-mix(in oklch, var(--wheel-accent) 20%, white);
+
+  --wheel-accent-overlay: color-mix(in oklch, var(--wheel-accent) 30%, transparent);
+  --wheel-accent-overlay-hover: color-mix(in oklch, var(--wheel-accent) 40%, transparent);
+
+  /* mesmo `--bg-dark` do site: 5% do acento sobre quase-preto */
+  --wheel-surface: color-mix(in oklch, var(--wheel-accent) 5%, #0f0f0f);
+}
+
+.theme-wheel {
+  --wheel-radius: 160px;
+  --wheel-angle: 0deg;
+  --wheel-height: 240px;
+  --wheel-item-size: 88px;
+  --wheel-rotation: 0deg;
+
+  perspective: 900px;
+  touch-action: pan-y;
+  cursor: grab;
+  outline: none;
+  width: min(100%, 420px);
+  margin: 0 auto;
+  position: relative;
+}
+
+.theme-wheel.is-dragging {
+  cursor: grabbing;
+}
+
+.theme-wheel:focus-visible {
+  outline: 2px solid var(--wheel-accent80);
+  outline-offset: 6px;
+}
+
+.theme-wheel__track {
+  width: 100%;
+  height: var(--wheel-height);
+  transform-style: preserve-3d;
+  transform: translateZ(calc(var(--wheel-radius) * -1)) rotateY(var(--wheel-rotation));
+  transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+  position: relative;
+}
+
+.theme-wheel.is-dragging .theme-wheel__track {
+  transition: none;
+}
+
+.theme-wheel__option {
+  width: var(--wheel-item-size);
+  height: var(--wheel-item-size);
+  margin: calc(var(--wheel-item-size) / -2);
+  cursor: pointer;
+  background: var(--wheel-surface);
+  color: var(--wheel-accent40);
+  opacity: 0.45;
+  transform-style: preserve-3d;
+  transform: rotateY(var(--option-angle)) translateZ(var(--wheel-radius)) rotateY(90deg);
+  border: 2px solid transparent;
+  border-radius: 50%;
+  place-items: center;
+  transition:
+    transform 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+    border-color 0.3s,
+    box-shadow 0.3s,
+    color 0.3s,
+    background-color 0.3s,
+    opacity 0.3s;
+  display: grid;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  padding: 0;
+}
+
+.theme-wheel__option svg {
+  width: 60%;
+  height: 60%;
+  color: inherit;
+  transition:
+    color 0.3s,
+    transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.theme-wheel__option:is(:hover, :focus-visible) {
+  border-color: var(--wheel-accent60);
+  color: var(--wheel-accent80);
+  background: var(--wheel-accent-overlay);
+  opacity: 0.75;
+}
+
+.theme-wheel__option.is-active {
+  opacity: 1;
+  border-color: var(--wheel-accent80);
+  color: var(--wheel-accent100);
+  background: var(--wheel-accent-overlay);
+  box-shadow: 0 0 36px var(--wheel-accent-overlay);
+  transform: rotateY(var(--option-angle)) translateZ(calc(var(--wheel-radius) * 1.3))
+    rotateY(var(--option-facing)) scale(1.12);
+}
+
+.theme-wheel__option.is-selected::after {
+  content: "";
+  border: 2px solid var(--wheel-accent100);
+  opacity: 0.55;
+  pointer-events: none;
+  border-radius: 50%;
+  position: absolute;
+  inset: -8px;
+}
+
+.theme-wheel__option:focus-visible {
+  border-color: var(--wheel-accent100);
+  color: var(--wheel-accent100);
+  background: var(--wheel-accent-overlay-hover);
+  opacity: 0.85;
+}
