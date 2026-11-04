@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: roda-chamadas
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+    routes:
+      - type: rewrite
+        source: /chamadas/*
+        destination: /chamadas/index.html
+      - type: rewrite
+        source: /carrossel/*
+        destination: /carrossel/index.html
