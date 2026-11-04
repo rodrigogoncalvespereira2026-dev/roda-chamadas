@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang='pt-BR' data-theme='cat'>
+	<head>
+		<meta charset='utf-8' />
+		<title>ChatNoirBrasil</title>
+		<link rel='icon' type='image/svg+xml' href='/favicon.svg' />
+		<link rel="canonical" href="https://cnbr.space/" />
+		<meta name='viewport' content='width=device-width, initial-scale=1' />
+		<meta name='theme-color' content='#000000' />
+		<meta name='description' content='Bem vindos ao site da CNBR, Site criado por fãs para fãs, com o objetivo de reunir informações sobre a série de TV Miraculous: As Aventuras de Ladybug e Chat Noir.' />
+		<meta name='color-scheme' content='dark' />
+
+		<!-- Facebook Meta Tags -->
+		<meta property='og:url' content='https://cnbr.space'>
+		<meta property='og:type' content='website'>
+		<meta property='og:title' content='ChatNoirBrasil'>
+		<meta property='og:description' content='Bem vindos ao site da CNBR, Site criado por fãs para fãs, com o objetivo de reunir informações sobre a série de TV Miraculous: As Aventuras de Ladybug e Chat Noir.'>
+		<meta property='og:image' content='/images/og.webp'>
+
+		<!-- Twitter Meta Tags -->
+		<meta name='twitter:card' content='summary_large_image'>
+		<meta property='twitter:domain' content='cnbr.space'>
+		<meta property='twitter:url' content='https://cnbr.space'>
+		<meta name='twitter:title' content='ChatNoirBrasil'>
+		<meta name='twitter:description' content='Bem vindos ao site da CNBR, Site criado por fãs para fãs, com o objetivo de reunir informações sobre a série de TV Miraculous: As Aventuras de Ladybug e Chat Noir.'>
+		<meta name='twitter:image' content='/images/og.webp'>
+
+		<link rel="manifest" href="/manifest.webmanifest" />
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+
+		<!--
+			Anti-flash: o tema e o idioma salvos são aplicados no <html> ANTES do CSS pintar,
+			então a página nunca aparece com a cor errada por um frame.
+		-->
+		<script>
+			(function () {
+				try {
+					var theme = localStorage.getItem("cnbr:theme");
+					if (theme) document.documentElement.dataset.theme = theme;
+					var locale = localStorage.getItem("cnbr:locale");
+					if (locale) document.documentElement.lang = locale;
+				} catch (error) {}
+			})();
+		</script>
+
+		<!-- Google tag (gtag.js) — desativado localmente para não enviar hits de desenvolvimento à propriedade G-WERDSZJJ7B
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-WERDSZJJ7B"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'G-WERDSZJJ7B');
+		</script>
+		-->
+	</head>
+	<body>
+		<div id="root"></div>
+		<script type="module" src="/src/main.jsx"></script>
+	</body>
+</html>

@@ -6,11 +6,11 @@
   estáticos são cache-first (o Vite gera nomes com hash, então não vencem).
 */
 
-const CACHE = "cnbr-chamadas-v1";
-const OFFLINE_URL = "/chamadas/";
+const CACHE = "cnbr-chamadas-v2";
+const OFFLINE_URL = "/";
 const PRECACHE = [
   OFFLINE_URL,
-  "/chamadas.webmanifest",
+  "/app.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/maskable-512.png",

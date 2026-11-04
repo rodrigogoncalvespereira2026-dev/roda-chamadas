@@ -12,12 +12,11 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      // Três páginas: o site (index.html), a demo da roda (carrossel/index.html)
-      // e a roda de chamadas (chamadas/index.html).
+      // Duas páginas: a roda de chamadas na raiz (index.html) e o perfil do
+      // site (perfil.html), que fica fora do caminho da app.
       input: {
         main: page("index.html"),
-        carrossel: page("carrossel/index.html"),
-        chamadas: page("chamadas/index.html"),
+        perfil: page("perfil.html"),
       },
     },
   },
