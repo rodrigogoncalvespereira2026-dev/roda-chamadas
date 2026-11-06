@@ -266,7 +266,11 @@ export default function ThemeWheel({
 
       if (drag.hasDragged) {
         suppressClickRef.current = true;
-        event.currentTarget.releasePointerCapture?.(event.pointerId);
+        try {
+          event.currentTarget.releasePointerCapture?.(event.pointerId);
+        } catch {
+          // o ponteiro pode ter sido solto antes (pointercancel, perda de foco)
+        }
         setIsDragging(false);
 
         const travelled = drag.lastRotation - drag.startRotation;

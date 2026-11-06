@@ -7,16 +7,20 @@ import "../carrossel/roda.css";
 import "./chamadas.css";
 
 /**
- * Roda de chamadas.
+ * Comunicador Miraculous.
  *
- * A roda dos Miraculous vira o seletor de contato: você gira, encontra o
- * contato e chama. A chamada em si é uma demonstração de tela (toca, atende
- * sozinho depois de alguns segundos, cronômetro e controles) — não há áudio
- * entre aparelhos, porque isso exigiria um servidor de sinalização.
+ * A roda escolhe o herói e o toque abre o canal. A chamada é uma projeção
+ * holográfica na tela: o herói aparece no feixe, o kwami dele narra o canal e,
+ * como Guardiã, você pode reunir o time inteiro na mesma chamada.
+ *
+ * O áudio não passa entre aparelhos (isso pediria um servidor de sinalização):
+ * quem "atende" e a conversa são simulados na tela.
  */
 
 /** Tempo até o contato "atender" (simulação). */
 const RING_MS = 3600;
+/** Quantos heróis cabem numa chamada de time. */
+const TEAM_SIZE = 4;
 
 const normalize = (value) =>
   value
@@ -28,6 +32,26 @@ function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+}
+
+/** O time da Guardiã: o contato escolhido mais os próximos heróis da roda. */
+function buildTeam(contact) {
+  const start = THEMES.findIndex((theme) => theme.id === contact.id);
+  const team = [contact];
+
+  for (let i = 1; i < THEMES.length && team.length < TEAM_SIZE; i += 1) {
+    const theme = THEMES[(start + i) % THEMES.length];
+    if (theme.id !== contact.id) team.push(theme);
+  }
+
+  return team;
+}
+
+function nextTeammate(members) {
+  if (members.length >= TEAM_SIZE) return members;
+  const taken = new Set(members.map((member) => member.id));
+  const next = THEMES.find((theme) => !taken.has(theme.id));
+  return next ? [...members, next] : members;
 }
 
 /* ----- ícones dos controles (SVG inline, currentColor) ----- */
@@ -96,87 +120,179 @@ function SearchIcon() {
   );
 }
 
-/* ----- tela de chamada ----- */
+function TeamIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
+      <circle cx="9" cy="7" r="3.5" />
+      <path d="M17 4.3a3.5 3.5 0 0 1 0 6.4" />
+      <path d="M19 14.4a4 4 0 0 1 3 3.9V20" />
+    </svg>
+  );
+}
 
-function CallScreen({ contact, phase, elapsed, muted, speaker, video, onToggleMute, onToggleSpeaker, onToggleVideo, onEnd }) {
-  const status = phase === "ringing" ? "Chamando…" : formatTime(elapsed);
+function AddHeroIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="9" cy="8" r="3.6" />
+      <path d="M2 20v-1.4A4.6 4.6 0 0 1 6.6 14h4.8a4.6 4.6 0 0 1 4.6 4.6V20" />
+      <path d="M19 5v6M16 8h6" />
+    </svg>
+  );
+}
+
+/* ----- tela de chamada: projeção holográfica ----- */
+
+function CallScreen({
+  members,
+  phase,
+  elapsed,
+  muted,
+  speaker,
+  video,
+  onToggleMute,
+  onToggleSpeaker,
+  onToggleVideo,
+  onAddMember,
+  onEnd,
+}) {
+  const main = members[0];
+  const others = members.slice(1);
+  const ringing = phase === "ringing";
+  const time = formatTime(elapsed);
+
+  const status = ringing
+    ? others.length
+      ? "Chamando o time…"
+      : "Chamando…"
+    : time;
+
+  const kwamiLine = ringing
+    ? "sintonizando o canal…"
+    : others.length
+      ? `mantendo ${others.length + 1} conexões abertas.`
+      : "canal aberto. Pode falar.";
 
   return (
     <div
       className="call"
       data-phase={phase}
-      style={{ "--accent-base": contact.accent }}
+      data-team={others.length ? "true" : "false"}
+      style={{ "--accent-base": main.accent }}
       role="dialog"
       aria-modal="true"
-      aria-label={`Chamada para ${contact.name}`}
+      aria-label={
+        others.length
+          ? `Chamada do time com ${members.map((member) => member.name).join(", ")}`
+          : `Chamada para ${main.name}`
+      }
     >
       <div className="call__glow" aria-hidden="true" />
 
-      <p className="call__badge">Sistema Miraculous</p>
+      <p className="call__badge">Sistema Miraculous · projeção</p>
 
-      <div className="call__avatar">
-        <span className="call__ring" aria-hidden="true" />
-        <span className="call__ring" aria-hidden="true" />
-        <span className="call__icon">
-          <ThemeIcon id={contact.id} />
-        </span>
+      <div className="call__projector">
+        <span className="call__beam" aria-hidden="true" />
+        <span className="call__base" aria-hidden="true" />
+
+        <div className="holo">
+          <span className="holo__ring" aria-hidden="true" />
+          <span className="holo__ring" aria-hidden="true" />
+          <span className="holo__figure">
+            <ThemeIcon id={main.id} />
+          </span>
+        </div>
       </div>
 
-      <h2 className="call__name">{contact.name}</h2>
+      <h2 className="call__name">{main.name}</h2>
+
       <p className="call__status" role="status" aria-live="polite">
         {status}
       </p>
 
-      {phase === "ringing" ? (
-        <div className="call__actions">
+      {main.kwami ? (
+        <p className="call__kwami">
+          <strong>{main.kwami}</strong> · {kwamiLine}
+        </p>
+      ) : null}
+
+      {others.length ? (
+        <ul className="call__team" aria-label="Também no canal">
+          {others.map((member) => (
+            <li key={member.id} className="call__teammate" style={{ "--accent-base": member.accent }}>
+              <span className="call__teammateIcon" aria-hidden="true">
+                <ThemeIcon id={member.id} />
+              </span>
+              {member.name}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <div className="call__actions">
+        {ringing ? (
           <button type="button" className="call__btn call__btn--end" onClick={onEnd} autoFocus>
             <PhoneOffIcon />
             <span>Cancelar</span>
           </button>
-        </div>
-      ) : (
-        <div className="call__actions">
+        ) : (
+          <>
+            <button
+              type="button"
+              className="call__btn"
+              aria-pressed={muted}
+              aria-label={muted ? "Ativar microfone" : "Silenciar microfone"}
+              onClick={onToggleMute}
+            >
+              <MicIcon muted={muted} />
+              <span>{muted ? "Sem áudio" : "Mudo"}</span>
+            </button>
+
+            <button
+              type="button"
+              className="call__btn"
+              aria-pressed={speaker}
+              aria-label={speaker ? "Desligar viva-voz" : "Ativar viva-voz"}
+              onClick={onToggleSpeaker}
+            >
+              <SpeakerIcon on={speaker} />
+              <span>Viva-voz</span>
+            </button>
+
+            <button
+              type="button"
+              className="call__btn"
+              aria-pressed={video}
+              aria-label={video ? "Desligar câmera" : "Ligar câmera"}
+              onClick={onToggleVideo}
+            >
+              <CameraIcon on={video} />
+              <span>Câmera</span>
+            </button>
+
+            <button type="button" className="call__btn call__btn--end" onClick={onEnd} aria-label="Encerrar o canal">
+              <PhoneOffIcon />
+              <span>Encerrar</span>
+            </button>
+          </>
+        )}
+
+        {members.length < TEAM_SIZE ? (
           <button
             type="button"
             className="call__btn"
-            aria-pressed={muted}
-            aria-label={muted ? "Ativar microfone" : "Silenciar microfone"}
-            onClick={onToggleMute}
+            onClick={onAddMember}
+            aria-label="Adicionar um herói ao canal"
           >
-            <MicIcon muted={muted} />
-            <span>{muted ? "Sem áudio" : "Mudo"}</span>
+            <AddHeroIcon />
+            <span>Time</span>
           </button>
+        ) : null}
+      </div>
 
-          <button
-            type="button"
-            className="call__btn"
-            aria-pressed={speaker}
-            aria-label={speaker ? "Desligar viva-voz" : "Ativar viva-voz"}
-            onClick={onToggleSpeaker}
-          >
-            <SpeakerIcon on={speaker} />
-            <span>Viva-voz</span>
-          </button>
-
-          <button
-            type="button"
-            className="call__btn"
-            aria-pressed={video}
-            aria-label={video ? "Desligar câmera" : "Ligar câmera"}
-            onClick={onToggleVideo}
-          >
-            <CameraIcon on={video} />
-            <span>Câmera</span>
-          </button>
-
-          <button type="button" className="call__btn call__btn--end" onClick={onEnd} aria-label="Desligar chamada">
-            <PhoneOffIcon />
-            <span>Desligar</span>
-          </button>
-        </div>
-      )}
-
-      <p className="call__note">Demonstração: a chamada acontece na tela, sem áudio entre aparelhos.</p>
+      <p className="call__note">
+        Demonstração: o canal é simulado na tela, sem áudio entre aparelhos.
+      </p>
     </div>
   );
 }
@@ -187,7 +303,7 @@ function CallsApp() {
   const [contactId, setContactId] = useState(DEFAULT_THEME);
   const [query, setQuery] = useState("");
   const [phase, setPhase] = useState("idle");
-  const [activeContact, setActiveContact] = useState(null);
+  const [members, setMembers] = useState([]);
   const [connectedAt, setConnectedAt] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -202,22 +318,30 @@ function CallsApp() {
     return THEMES.filter((theme) => normalize(theme.name).includes(term));
   }, [query]);
 
-  const startCall = useCallback(
-    (target) => {
-      setActiveContact(target);
-      setPhase("ringing");
-      setConnectedAt(null);
-      setElapsed(0);
-      setMuted(false);
-      setSpeaker(false);
-      setVideo(true);
-    },
-    []
-  );
+  const openChannel = useCallback((target) => {
+    setMembers([target]);
+    setPhase("ringing");
+    setConnectedAt(null);
+    setElapsed(0);
+    setMuted(false);
+    setSpeaker(false);
+    setVideo(true);
+  }, []);
+
+  /** A Guardiã chama o time: o contato escolhido abre o canal e os outros entram. */
+  const openTeamChannel = useCallback((target) => {
+    setMembers(buildTeam(target));
+    setPhase("ringing");
+    setConnectedAt(null);
+    setElapsed(0);
+    setMuted(false);
+    setSpeaker(false);
+    setVideo(true);
+  }, []);
 
   const endCall = useCallback(() => {
     setPhase("idle");
-    setActiveContact(null);
+    setMembers([]);
     setConnectedAt(null);
     setElapsed(0);
   }, []);
@@ -264,7 +388,10 @@ function CallsApp() {
       <header className="calls__head">
         <p className="calls__eyebrow">Sistema Miraculous</p>
         <h1>Roda de Chamadas</h1>
-        <p className="calls__sub">Gire a roda, encontre o contato que você quer e chame.</p>
+        <p className="calls__sub">
+          Gire a roda, toque no herói e o comunicador abre o canal. Como Guardiã, você também pode
+          reunir o time na mesma chamada.
+        </p>
       </header>
 
       <section className="calls__wheel" aria-labelledby="roda-titulo">
@@ -277,7 +404,7 @@ function CallsApp() {
             themes={THEMES}
             selectedTheme={contactId}
             onSelect={(theme) => setContactId(theme.id)}
-            onActivate={startCall}
+            onActivate={openChannel}
             label="Contatos"
           />
         </div>
@@ -289,12 +416,17 @@ function CallsApp() {
 
           <span className="calls__who">
             <strong>{contact.name}</strong>
-            <span>Disponível</span>
+            <span>{contact.kwami ? `Kwami ${contact.kwami}` : "Disponível"}</span>
           </span>
 
-          <button type="button" className="calls__callBtn" onClick={() => startCall(contact)}>
+          <button type="button" className="calls__callBtn" onClick={() => openChannel(contact)}>
             <PhoneIcon />
             Chamar
+          </button>
+
+          <button type="button" className="calls__teamBtn" onClick={() => openTeamChannel(contact)}>
+            <TeamIcon />
+            Reunir time
           </button>
         </div>
 
@@ -330,7 +462,7 @@ function CallsApp() {
                   aria-pressed={item.id === contactId}
                   onClick={() => {
                     setContactId(item.id);
-                    startCall(item);
+                    openChannel(item);
                   }}
                   title={`Chamar ${item.name}`}
                 >
@@ -347,9 +479,9 @@ function CallsApp() {
         )}
       </section>
 
-      {phase !== "idle" && activeContact ? (
+      {phase !== "idle" && members.length ? (
         <CallScreen
-          contact={activeContact}
+          members={members}
           phase={phase}
           elapsed={elapsed}
           muted={muted}
@@ -358,6 +490,7 @@ function CallsApp() {
           onToggleMute={() => setMuted((value) => !value)}
           onToggleSpeaker={() => setSpeaker((value) => !value)}
           onToggleVideo={() => setVideo((value) => !value)}
+          onAddMember={() => setMembers((current) => nextTeammate(current))}
           onEnd={endCall}
         />
       ) : null}
