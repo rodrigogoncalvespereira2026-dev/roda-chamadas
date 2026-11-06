@@ -7,19 +7,20 @@ import "../carrossel/roda.css";
 import "./chamadas.css";
 
 /**
- * Comunicador Miraculous.
+ * Comunicador Miraculous, em três abas.
  *
- * A roda escolhe o herói e o toque abre o canal. A chamada é uma projeção
- * holográfica na tela: o herói aparece no feixe, o kwami dele narra o canal e,
- * como Guardiã, você pode reunir o time inteiro na mesma chamada.
+ *  - Roda:     escolhe os heróis (vários ao mesmo tempo) girando o cilindro.
+ *  - Contatos: a mesma escolha em lista, com busca.
+ *  - Canal:    o comunicador aberto — projeção holográfica, kwami e time.
  *
- * O áudio não passa entre aparelhos (isso pediria um servidor de sinalização):
- * quem "atende" e a conversa são simulados na tela.
+ * A seleção é compartilhada entre as abas: marcar na roda reflete na lista e o
+ * canal chama exatamente quem estiver marcado. O áudio não passa entre
+ * aparelhos (isso pediria um servidor de sinalização): a conversa é simulada.
  */
 
 /** Tempo até o contato "atender" (simulação). */
 const RING_MS = 3600;
-/** Quantos heróis cabem numa chamada de time. */
+/** Quantos heróis cabem numa chamada. */
 const TEAM_SIZE = 4;
 
 const normalize = (value) =>
@@ -34,7 +35,7 @@ function formatTime(seconds) {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
-/** O time da Guardiã: o contato escolhido mais os próximos heróis da roda. */
+/** O time sugerido: o contato em foco mais os próximos heróis da roda. */
 function buildTeam(contact) {
   const start = THEMES.findIndex((theme) => theme.id === contact.id);
   const team = [contact];
@@ -54,7 +55,7 @@ function nextTeammate(members) {
   return next ? [...members, next] : members;
 }
 
-/* ----- ícones dos controles (SVG inline, currentColor) ----- */
+/* ----- ícones (SVG inline, currentColor) ----- */
 
 function PhoneIcon() {
   return (
@@ -120,17 +121,6 @@ function SearchIcon() {
   );
 }
 
-function TeamIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-      <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-      <circle cx="9" cy="7" r="3.5" />
-      <path d="M17 4.3a3.5 3.5 0 0 1 0 6.4" />
-      <path d="M19 14.4a4 4 0 0 1 3 3.9V20" />
-    </svg>
-  );
-}
-
 function AddHeroIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
@@ -140,6 +130,30 @@ function AddHeroIcon() {
     </svg>
   );
 }
+
+function WheelTabIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function ListTabIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M8 6h13M8 12h13M8 18h13" />
+      <path d="M3 6h.01M3 12h.01M3 18h.01" />
+    </svg>
+  );
+}
+
+const TABS = [
+  { id: "roda", label: "Roda", Icon: WheelTabIcon },
+  { id: "contatos", label: "Contatos", Icon: ListTabIcon },
+  { id: "canal", label: "Canal", Icon: PhoneIcon },
+];
 
 /* ----- tela de chamada: projeção holográfica ----- */
 
@@ -175,12 +189,11 @@ function CallScreen({
 
   return (
     <div
-      className="call"
+      className="call call--panel"
       data-phase={phase}
       data-team={others.length ? "true" : "false"}
       style={{ "--accent-base": main.accent }}
-      role="dialog"
-      aria-modal="true"
+      role="region"
       aria-label={
         others.length
           ? `Chamada do time com ${members.map((member) => member.name).join(", ")}`
@@ -300,7 +313,10 @@ function CallScreen({
 /* ----- página ----- */
 
 function CallsApp() {
-  const [contactId, setContactId] = useState(DEFAULT_THEME);
+  const [tab, setTab] = useState("roda");
+  const [focusId, setFocusId] = useState(DEFAULT_THEME);
+  const [selectedIds, setSelectedIds] = useState(() => [DEFAULT_THEME]);
+  const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [phase, setPhase] = useState("idle");
   const [members, setMembers] = useState([]);
@@ -310,7 +326,11 @@ function CallsApp() {
   const [speaker, setSpeaker] = useState(false);
   const [video, setVideo] = useState(true);
 
-  const contact = themeById(contactId);
+  const focus = themeById(focusId);
+  const selectedThemes = useMemo(
+    () => selectedIds.map((id) => themeById(id)).filter(Boolean),
+    [selectedIds]
+  );
 
   const filtered = useMemo(() => {
     const term = normalize(query.trim());
@@ -318,26 +338,50 @@ function CallsApp() {
     return THEMES.filter((theme) => normalize(theme.name).includes(term));
   }, [query]);
 
-  const openChannel = useCallback((target) => {
-    setMembers([target]);
-    setPhase("ringing");
-    setConnectedAt(null);
-    setElapsed(0);
-    setMuted(false);
-    setSpeaker(false);
-    setVideo(true);
-  }, []);
+  /** Marca ou desmarca um herói; o cilindro gira até ele. */
+  const toggleHero = useCallback(
+    (theme) => {
+      setFocusId(theme.id);
 
-  /** A Guardiã chama o time: o contato escolhido abre o canal e os outros entram. */
-  const openTeamChannel = useCallback((target) => {
-    setMembers(buildTeam(target));
+      if (selectedIds.includes(theme.id)) {
+        setSelectedIds(selectedIds.filter((id) => id !== theme.id));
+        setNotice("");
+        return;
+      }
+
+      if (selectedIds.length >= TEAM_SIZE) {
+        setNotice(`O canal sustenta ${TEAM_SIZE} heróis. Desmarque um para entrar outro.`);
+        return;
+      }
+
+      setSelectedIds([...selectedIds, theme.id]);
+      setNotice("");
+    },
+    [selectedIds]
+  );
+
+  /** Sugere o time da Guardiã: o herói em foco mais os três seguintes. */
+  const pickSuggestedTeam = useCallback(() => {
+    setSelectedIds(buildTeam(focus).map((theme) => theme.id));
+    setNotice("");
+  }, [focus]);
+
+  const startCall = useCallback(() => {
+    if (!selectedThemes.length) {
+      setNotice("Marque pelo menos um herói para abrir o canal.");
+      return;
+    }
+
+    setMembers(selectedThemes.slice(0, TEAM_SIZE));
     setPhase("ringing");
     setConnectedAt(null);
     setElapsed(0);
     setMuted(false);
     setSpeaker(false);
     setVideo(true);
-  }, []);
+    setNotice("");
+    setTab("canal");
+  }, [selectedThemes]);
 
   const endCall = useCallback(() => {
     setPhase("idle");
@@ -365,7 +409,7 @@ function CallsApp() {
     return () => clearInterval(timer);
   }, [phase, connectedAt]);
 
-  /** Esc encerra; com a chamada aberta a página atrás não rola. */
+  /** Esc encerra a chamada. */
   useEffect(() => {
     if (phase === "idle") return undefined;
 
@@ -373,126 +417,270 @@ function CallsApp() {
       if (event.key === "Escape") endCall();
     };
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [endCall, phase]);
 
+  /** Setas navegam entre as abas. */
+  const onTabKeyDown = (event) => {
+    const index = TABS.findIndex((item) => item.id === tab);
+    let next = null;
+
+    if (event.key === "ArrowRight") next = (index + 1) % TABS.length;
+    else if (event.key === "ArrowLeft") next = (index - 1 + TABS.length) % TABS.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = TABS.length - 1;
+
+    if (next === null) return;
+
+    event.preventDefault();
+    setTab(TABS[next].id);
+    document.getElementById(`aba-${TABS[next].id}`)?.focus();
+  };
+
+  const canalBadge =
+    phase === "ringing" ? "…" : phase === "active" ? String(members.length) : "";
+
   return (
-    <main className="calls" style={{ "--accent-base": contact.accent }}>
+    <main className="calls" style={{ "--accent-base": focus.accent }}>
       <header className="calls__head">
         <p className="calls__eyebrow">Sistema Miraculous</p>
         <h1>Roda de Chamadas</h1>
         <p className="calls__sub">
-          Gire a roda, toque no herói e o comunicador abre o canal. Como Guardiã, você também pode
-          reunir o time na mesma chamada.
+          Escolha os heróis na roda ou na lista, marque quantos quiser e abra o canal. Como
+          Guardiã, você fala com o time inteiro na mesma projeção.
         </p>
       </header>
 
-      <section className="calls__wheel" aria-labelledby="roda-titulo">
-        <h2 id="roda-titulo" className="calls__label">
-          Contato
-        </h2>
+      <div className="calls__tabs" role="tablist" aria-label="Seções do comunicador" onKeyDown={onTabKeyDown}>
+        {TABS.map(({ id, label, Icon }) => {
+          const active = tab === id;
+          const badge =
+            id === "roda" ? String(selectedThemes.length) : id === "canal" ? canalBadge : "";
 
-        <div className="calls__wheelBox">
-          <ThemeWheel
-            themes={THEMES}
-            selectedTheme={contactId}
-            onSelect={(theme) => setContactId(theme.id)}
-            onActivate={openChannel}
-            label="Contatos"
-          />
-        </div>
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              id={`aba-${id}`}
+              className="calls__tab"
+              aria-selected={active}
+              aria-controls={`painel-${id}`}
+              tabIndex={active ? 0 : -1}
+              onClick={() => setTab(id)}
+            >
+              <Icon />
+              <span>{label}</span>
+              {badge ? (
+                <span className="calls__tabBadge" aria-hidden="true">
+                  {badge}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="calls__selection">
-          <span className="calls__avatar" aria-hidden="true">
-            <ThemeIcon id={contact.id} />
-          </span>
+      {tab === "roda" ? (
+        <section
+          className="calls__panel"
+          role="tabpanel"
+          id="painel-roda"
+          aria-labelledby="aba-roda"
+          tabIndex={0}
+        >
+          <div className="calls__wheel">
+            <h2 className="calls__label">Heróis na roda</h2>
 
-          <span className="calls__who">
-            <strong>{contact.name}</strong>
-            <span>{contact.kwami ? `Kwami ${contact.kwami}` : "Disponível"}</span>
-          </span>
+            <div className="calls__wheelBox">
+              <ThemeWheel
+                themes={THEMES}
+                selectedTheme={focusId}
+                selectedIds={selectedIds}
+                onToggle={toggleHero}
+                label="Contatos"
+              />
+            </div>
 
-          <button type="button" className="calls__callBtn" onClick={() => openChannel(contact)}>
-            <PhoneIcon />
-            Chamar
-          </button>
+            <p className="calls__hint">
+              Toque em um círculo para marcar, toque de novo para tirar. Dá para escolher até{" "}
+              {TEAM_SIZE} heróis na mesma chamada.
+            </p>
+          </div>
 
-          <button type="button" className="calls__teamBtn" onClick={() => openTeamChannel(contact)}>
-            <TeamIcon />
-            Reunir time
-          </button>
-        </div>
+          <div className="calls__selection">
+            <div className="calls__selectionHead">
+              <span className="calls__label">No canal</span>
+              <span className="calls__count">
+                {selectedThemes.length}/{TEAM_SIZE}
+              </span>
+            </div>
 
-        <p className="calls__hint">
-          Arraste para girar. Toque no círculo da frente para chamar na hora.
-        </p>
-      </section>
+            {selectedThemes.length ? (
+              <ul className="calls__picks">
+                {selectedThemes.map((theme) => (
+                  <li key={theme.id} style={{ "--accent-base": theme.accent }}>
+                    <button
+                      type="button"
+                      className="calls__pick"
+                      onClick={() => toggleHero(theme)}
+                      title={`Tirar ${theme.name} do canal`}
+                    >
+                      <span className="calls__pickIcon" aria-hidden="true">
+                        <ThemeIcon id={theme.id} />
+                      </span>
+                      {theme.name}
+                      <span className="calls__pickClose" aria-hidden="true">
+                        ×
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="calls__picksEmpty">
+                Nenhum herói marcado. Toque nos círculos da roda para montar a chamada.
+              </p>
+            )}
 
-      <section className="calls__list" aria-labelledby="lista-titulo">
-        <div className="calls__listHead">
-          <h2 id="lista-titulo">Contatos</h2>
+            <div className="calls__actions">
+              <button type="button" className="calls__callBtn" onClick={startCall} disabled={!selectedThemes.length}>
+                <PhoneIcon />
+                {selectedThemes.length > 1 ? `Chamar ${selectedThemes.length}` : "Chamar"}
+              </button>
 
-          <label className="calls__search">
-            <SearchIcon />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Procurar contato"
-              aria-label="Procurar contato"
-            />
-          </label>
-        </div>
+              <button type="button" className="calls__teamBtn" onClick={pickSuggestedTeam}>
+                <AddHeroIcon />
+                Time sugerido
+              </button>
 
-        {filtered.length ? (
-          <ul className="calls__grid">
-            {filtered.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  className="calls__contact"
-                  style={{ "--accent-base": item.accent }}
-                  aria-pressed={item.id === contactId}
-                  onClick={() => {
-                    setContactId(item.id);
-                    openChannel(item);
-                  }}
-                  title={`Chamar ${item.name}`}
-                >
-                  <span className="calls__avatar" aria-hidden="true">
-                    <ThemeIcon id={item.id} />
-                  </span>
-                  <span>{item.name}</span>
+              {selectedThemes.length ? (
+                <button type="button" className="calls__ghostBtn" onClick={() => setSelectedIds([])}>
+                  Limpar
                 </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="calls__empty">Nenhum contato encontrado para “{query.trim()}”.</p>
-        )}
-      </section>
+              ) : null}
+            </div>
 
-      {phase !== "idle" && members.length ? (
-        <CallScreen
-          members={members}
-          phase={phase}
-          elapsed={elapsed}
-          muted={muted}
-          speaker={speaker}
-          video={video}
-          onToggleMute={() => setMuted((value) => !value)}
-          onToggleSpeaker={() => setSpeaker((value) => !value)}
-          onToggleVideo={() => setVideo((value) => !value)}
-          onAddMember={() => setMembers((current) => nextTeammate(current))}
-          onEnd={endCall}
-        />
+            {notice ? (
+              <p className="calls__notice" role="status">
+                {notice}
+              </p>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {tab === "contatos" ? (
+        <section
+          className="calls__panel"
+          role="tabpanel"
+          id="painel-contatos"
+          aria-labelledby="aba-contatos"
+          tabIndex={0}
+        >
+          <div className="calls__listHead">
+            <h2>Contatos</h2>
+
+            <label className="calls__search">
+              <SearchIcon />
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Procurar contato"
+                aria-label="Procurar contato"
+              />
+            </label>
+          </div>
+
+          {filtered.length ? (
+            <ul className="calls__grid">
+              {filtered.map((item) => {
+                const picked = selectedIds.indexOf(item.id);
+                return (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className="calls__contact"
+                      style={{ "--accent-base": item.accent }}
+                      aria-pressed={picked >= 0}
+                      onClick={() => toggleHero(item)}
+                      title={picked >= 0 ? `Tirar ${item.name} do canal` : `Pôr ${item.name} no canal`}
+                    >
+                      {picked >= 0 ? (
+                        <span className="calls__pickMark" aria-hidden="true">
+                          {picked + 1}
+                        </span>
+                      ) : null}
+                      <span className="calls__avatar" aria-hidden="true">
+                        <ThemeIcon id={item.id} />
+                      </span>
+                      <span>{item.name}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="calls__empty">Nenhum contato encontrado para “{query.trim()}”.</p>
+          )}
+
+          <p className="calls__hint">
+            Os heróis marcados aparecem na aba Roda com a ordem da chamada.
+          </p>
+        </section>
+      ) : null}
+
+      {tab === "canal" ? (
+        <section
+          className="calls__panel"
+          role="tabpanel"
+          id="painel-canal"
+          aria-labelledby="aba-canal"
+          tabIndex={0}
+        >
+          {phase === "idle" ? (
+            <div className="calls__idle">
+              <span className="calls__idleIcon" aria-hidden="true">
+                <PhoneIcon />
+              </span>
+              <h2>Nenhum canal aberto</h2>
+              <p>
+                {selectedThemes.length
+                  ? `${selectedThemes.length} herói${selectedThemes.length > 1 ? "s" : ""} marcado${
+                      selectedThemes.length > 1 ? "s" : ""
+                    }: ${selectedThemes.map((theme) => theme.name).join(", ")}.`
+                  : "Marque heróis na roda ou na lista de contatos para abrir o comunicador."}
+              </p>
+
+              <button type="button" className="calls__callBtn" onClick={startCall} disabled={!selectedThemes.length}>
+                <PhoneIcon />
+                Abrir canal
+              </button>
+
+              {notice ? (
+                <p className="calls__notice" role="status">
+                  {notice}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <CallScreen
+              members={members}
+              phase={phase}
+              elapsed={elapsed}
+              muted={muted}
+              speaker={speaker}
+              video={video}
+              onToggleMute={() => setMuted((value) => !value)}
+              onToggleSpeaker={() => setSpeaker((value) => !value)}
+              onToggleVideo={() => setVideo((value) => !value)}
+              onAddMember={() => setMembers((current) => nextTeammate(current))}
+              onEnd={endCall}
+            />
+          )}
+        </section>
       ) : null}
     </main>
   );

@@ -40,10 +40,17 @@ function wrapIndex(index, total) {
 export default function ThemeWheel({
   themes = THEMES,
   selectedTheme,
+  selectedIds,
   onSelect,
   onActivate,
+  onToggle,
   label = "Temas",
 }) {
+  /** Seleção múltipla: com `selectedIds`, todos os ids marcados ficam acesos. */
+  const isPicked = useCallback(
+    (id) => (selectedIds ? selectedIds.includes(id) : id === selectedTheme),
+    [selectedIds, selectedTheme]
+  );
   const total = themes.length;
   const angle = total ? 360 / total : 0;
 
@@ -361,7 +368,8 @@ export default function ThemeWheel({
           event.preventDefault();
           const theme = themes[activeIndex];
           if (!theme) break;
-          if (onActivate) onActivate(theme);
+          if (onToggle) onToggle(theme);
+          else if (onActivate) onActivate(theme);
           else onSelect?.(theme);
           break;
         }
@@ -369,7 +377,7 @@ export default function ThemeWheel({
           break;
       }
     },
-    [activeIndex, goTo, onActivate, onSelect, themes, total]
+    [activeIndex, goTo, onActivate, onSelect, onToggle, themes, total]
   );
 
   const handleSelect = useCallback(
@@ -385,11 +393,17 @@ export default function ThemeWheel({
       const theme = themes[next];
       if (!theme) return;
 
-      // Clicar no item da frente ativa de verdade (chamar); nos outros, só gira.
+      // Com seleção múltipla, todo clique alterna o item e o traz para a frente.
+      if (onToggle) {
+        onToggle(theme);
+        return;
+      }
+
+      // Sem isso, clicar no item da frente ativa de verdade (chamar).
       if (theme.id === selectedTheme) onActivate?.(theme);
       else onSelect?.(theme);
     },
-    [goTo, onActivate, onSelect, selectedTheme, themes, total]
+    [goTo, onActivate, onSelect, onToggle, selectedTheme, themes, total]
   );
 
   /* ----- o tema escolhido manda na rotação ----- */
@@ -447,7 +461,7 @@ export default function ThemeWheel({
           if (facing > 180) facing -= 360;
 
           const isActive = index === activeIndex;
-          const isSelected = theme.id === selectedTheme;
+          const isSelected = isPicked(theme.id);
 
           const className = [
             "theme-wheel__option",
@@ -472,6 +486,7 @@ export default function ThemeWheel({
               }}
               role="option"
               aria-selected={isSelected}
+              data-picked={isSelected ? "true" : undefined}
               aria-label={`${theme.name} · ${label}`}
               title={theme.name}
               onClick={() => handleSelect(index)}
