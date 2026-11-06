@@ -41,6 +41,7 @@ export default function ThemeWheel({
   themes = THEMES,
   selectedTheme,
   onSelect,
+  onActivate,
   label = "Temas",
 }) {
   const total = themes.length;
@@ -52,6 +53,8 @@ export default function ThemeWheel({
   const velocityRef = useRef(0);
   const lastFrameRef = useRef(null);
   const animationRef = useRef(null);
+  /** Um clique logo depois de um arrasto é o fim do gesto, não uma escolha. */
+  const suppressClickRef = useRef(false);
 
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -206,6 +209,7 @@ export default function ThemeWheel({
       if (total < 2) return;
 
       stopAnimation();
+      suppressClickRef.current = false;
       dragRef.current = {
         pointerId: event.pointerId,
         startX: event.clientX,
@@ -261,6 +265,7 @@ export default function ThemeWheel({
       if (!drag || drag.pointerId !== event.pointerId) return;
 
       if (drag.hasDragged) {
+        suppressClickRef.current = true;
         event.currentTarget.releasePointerCapture?.(event.pointerId);
         setIsDragging(false);
 
@@ -344,25 +349,39 @@ export default function ThemeWheel({
           goTo(total - 1);
           break;
         case "Enter":
-        case " ":
+        case " ": {
           event.preventDefault();
-          onSelect?.(themes[activeIndex]);
+          const theme = themes[activeIndex];
+          if (!theme) break;
+          if (onActivate) onActivate(theme);
+          else onSelect?.(theme);
           break;
+        }
         default:
           break;
       }
     },
-    [activeIndex, goTo, onSelect, themes, total]
+    [activeIndex, goTo, onActivate, onSelect, themes, total]
   );
 
   const handleSelect = useCallback(
     (index) => {
       if (!total) return;
+
+      if (suppressClickRef.current) {
+        suppressClickRef.current = false;
+        return;
+      }
+
       const next = goTo(index);
       const theme = themes[next];
-      if (theme && theme !== selectedTheme) onSelect?.(theme);
+      if (!theme) return;
+
+      // Clicar no item da frente ativa de verdade (chamar); nos outros, só gira.
+      if (theme === selectedTheme) onActivate?.(theme);
+      else onSelect?.(theme);
     },
-    [goTo, onSelect, selectedTheme, themes, total]
+    [goTo, onActivate, onSelect, selectedTheme, themes, total]
   );
 
   /* ----- o tema escolhido manda na rotação ----- */

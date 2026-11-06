@@ -277,6 +277,7 @@ function CallsApp() {
             themes={THEMES}
             selectedTheme={contactId}
             onSelect={(theme) => setContactId(theme.id)}
+            onActivate={startCall}
             label="Contatos"
           />
         </div>
@@ -298,7 +299,7 @@ function CallsApp() {
         </div>
 
         <p className="calls__hint">
-          Arraste, use o scroll ou as setas. Clique para escolher o contato.
+          Arraste para girar. Toque no círculo da frente para chamar na hora.
         </p>
       </section>
 
@@ -327,8 +328,10 @@ function CallsApp() {
                   className="calls__contact"
                   style={{ "--accent-base": item.accent }}
                   aria-pressed={item.id === contactId}
-                  onClick={() => setContactId(item.id)}
-                  onDoubleClick={() => startCall(item)}
+                  onClick={() => {
+                    setContactId(item.id);
+                    startCall(item);
+                  }}
                   title={`Chamar ${item.name}`}
                 >
                   <span className="calls__avatar" aria-hidden="true">
