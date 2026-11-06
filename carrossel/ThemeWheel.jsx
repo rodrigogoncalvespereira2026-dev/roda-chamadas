@@ -234,7 +234,11 @@ export default function ThemeWheel({
         if (Math.abs(travelled) < DRAG_THRESHOLD) return;
         drag.hasDragged = true;
         setIsDragging(true);
-        event.currentTarget.setPointerCapture?.(event.pointerId);
+        try {
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        } catch {
+          // ponteiro sintético ou já liberado: a roda gira mesmo sem captura
+        }
         lastFrameRef.current = now;
       }
 
