@@ -378,7 +378,7 @@ export default function ThemeWheel({
       if (!theme) return;
 
       // Clicar no item da frente ativa de verdade (chamar); nos outros, só gira.
-      if (theme === selectedTheme) onActivate?.(theme);
+      if (theme.id === selectedTheme) onActivate?.(theme);
       else onSelect?.(theme);
     },
     [goTo, onActivate, onSelect, selectedTheme, themes, total]
