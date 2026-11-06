@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom/client";
 import ThemeWheel from "../carrossel/ThemeWheel";
 import ThemeIcon from "../carrossel/ThemeIcon";
+import MapPanel from "./MapPanel";
 import { DEFAULT_THEME, THEMES, themeById } from "../carrossel/themes";
 import "../carrossel/roda.css";
 import "./chamadas.css";
@@ -140,6 +141,24 @@ function WheelTabIcon() {
   );
 }
 
+function MapTabIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3Z" />
+      <path d="M9 3v15M15 6v15" />
+    </svg>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" />
+      <circle cx="12" cy="10" r="2.6" />
+    </svg>
+  );
+}
+
 function ListTabIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
@@ -153,6 +172,7 @@ const TABS = [
   { id: "roda", label: "Roda", Icon: WheelTabIcon },
   { id: "contatos", label: "Contatos", Icon: ListTabIcon },
   { id: "canal", label: "Canal", Icon: PhoneIcon },
+  { id: "mapa", label: "Mapa", Icon: MapTabIcon },
 ];
 
 /* ----- tela de chamada: projeção holográfica ----- */
@@ -168,6 +188,7 @@ function CallScreen({
   onToggleSpeaker,
   onToggleVideo,
   onAddMember,
+  onShowMap,
   onEnd,
 }) {
   const main = members[0];
@@ -281,6 +302,11 @@ function CallScreen({
             >
               <CameraIcon on={video} />
               <span>Câmera</span>
+            </button>
+
+            <button type="button" className="call__btn" onClick={onShowMap} aria-label="Ver o time no mapa">
+              <PinIcon />
+              <span>Mapa</span>
             </button>
 
             <button type="button" className="call__btn call__btn--end" onClick={onEnd} aria-label="Encerrar o canal">
@@ -677,9 +703,22 @@ function CallsApp() {
               onToggleSpeaker={() => setSpeaker((value) => !value)}
               onToggleVideo={() => setVideo((value) => !value)}
               onAddMember={() => setMembers((current) => nextTeammate(current))}
+              onShowMap={() => setTab("mapa")}
               onEnd={endCall}
             />
           )}
+        </section>
+      ) : null}
+
+      {tab === "mapa" ? (
+        <section
+          className="calls__panel"
+          role="tabpanel"
+          id="painel-mapa"
+          aria-labelledby="aba-mapa"
+          tabIndex={0}
+        >
+          <MapPanel selectedThemes={selectedThemes} onToggle={toggleHero} />
         </section>
       ) : null}
     </main>
