@@ -10,7 +10,8 @@
     "start": "node server.js",
     "build:app": "vite build --mode app",
     "android:sync": "npm run build:app && cap sync android",
-    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleRelease && cd .. && cp android/app/build/outputs/apk/release/app-release.apk apk/roda-chamadas.apk",
+    "splash": "node scripts/splash.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.3",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "sharp": "^0.35.5",
     "vite": "^5.4.11"
   }
 }

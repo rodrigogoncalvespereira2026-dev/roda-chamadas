@@ -1,5 +1,7 @@
 node_modules
 dist
+# chave de assinatura da app — não vai para o repositório
+android/keystore
 # contas de quem usa o comunicador (criadas em tempo de execução)
 data
 .dev-server.log
