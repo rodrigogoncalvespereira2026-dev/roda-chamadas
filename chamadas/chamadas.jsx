@@ -950,6 +950,7 @@ function CallsApp() {
               unread={totalUnread}
               onMute={() => sessionRef.current?.setMuted(!(view?.muted ?? false))}
               onCamera={() => sessionRef.current?.setCamera(!(view?.camera ?? false))}
+              onFixCamera={() => sessionRef.current?.restartCamera()}
               onChat={() => setTab("recados")}
               onMap={() => setTab("mapa")}
               onEnd={endCall}

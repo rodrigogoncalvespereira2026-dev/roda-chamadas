@@ -150,6 +150,7 @@ export default function CallScreen({
   unread = 0,
   onMute,
   onCamera,
+  onFixCamera,
   onChat,
   onMap,
   onEnd,
@@ -214,10 +215,16 @@ export default function CallScreen({
       {mediaError ? <p className="calls__notice">{mediaError}</p> : null}
 
       {localVideo && larguraLocal === 0 && elapsed > 3 ? (
-        <p className="calls__notice">
-          A câmera não está a enviar imagem. Toque em “Câmera off” e ligue outra vez; se
-          continuar, confira a permissão da câmera nas definições do site.
-        </p>
+        <div className="call__aviso">
+          <p className="calls__notice">
+            A câmera não está a enviar imagem. Feche os outros apps que usam a câmera e
+tente
+            reiniciá-la; se continuar, confira a permissão nas definições do site.
+          </p>
+          <button type="button" className="call__avisoBtn" onClick={onFixCamera}>
+            Reiniciar câmera
+          </button>
+        </div>
       ) : null}
 
       <div className="call__actions">

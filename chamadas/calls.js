@@ -374,6 +374,51 @@ export class CallSession {
     this.emit();
   }
 
+  /*
+    Reinicia a câmera quando ela dá uma faixa sem imagem.
+
+    Acontece no iPhone: a faixa existe, está "ligada", mas não chega nenhum
+    quadro. Parar a faixa e pedir a câmera outra vez costuma resolver, porque
+    força o sistema a abrir uma sessão nova em vez de reaproveitar a que ficou
+    presa (por exemplo depois de a app ir para segundo plano).
+  */
+  async restartCamera() {
+    const antigas = this.local?.getVideoTracks() ?? [];
+
+    for (const track of antigas) {
+      track.stop();
+      this.local.removeTrack(track);
+    }
+
+    try {
+      const nova = await navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS });
+      const track = nova.getVideoTracks()[0];
+
+      if (!this.local) this.local = new MediaStream();
+      this.local.addTrack(track);
+
+      for (const peer of this.peers.values()) {
+        const envio = peer.pc.getSenders().find((sender) => sender.track?.kind === "video");
+
+        try {
+          // a faixa que já estava no lugar da antiga não precisa de renegociar
+          if (envio) await envio.replaceTrack(track);
+          else peer.pc.addTrack(track, this.local);
+        } catch {
+          /* conexão já fechada */
+        }
+      }
+
+      this.mediaError = null;
+      this.camera = true;
+    } catch {
+      this.mediaError = "A câmera não liberou. A chamada segue sem vídeo.";
+      this.camera = false;
+    }
+
+    this.emit();
+  }
+
   close() {
     if (this.closed) return;
     this.closed = true;
