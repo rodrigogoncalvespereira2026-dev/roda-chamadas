@@ -53,6 +53,19 @@ export function CameraIcon({ on = true, ...props }) {
   );
 }
 
+/** Trocar entre a câmera da frente e a de trás. */
+export function FlipCameraIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="7" y="7" width="10" height="10" rx="2" />
+      <path d="M4 9V7a3 3 0 0 1 3-3h2" />
+      <path d="m7 2.5 2 1.5-2 1.5" />
+      <path d="M20 15v2a3 3 0 0 1-3 3h-2" />
+      <path d="m17 21.5-2-1.5 2-1.5" />
+    </svg>
+  );
+}
+
 export function SpeakerIcon({ on, ...props }) {
   return (
     <svg {...base} {...props}>

@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import { themeById } from "../carrossel/themes";
-import { CameraIcon, ChatTabIcon, MicIcon, PhoneOffIcon, PinIcon } from "./icons";
+import {
+  CameraIcon,
+  ChatTabIcon,
+  FlipCameraIcon,
+  MicIcon,
+  PhoneOffIcon,
+  PinIcon,
+} from "./icons";
 
 /**
  * Ecrã da chamada: vídeo de quem está do outro lado, o meu em miniatura e os
@@ -150,6 +157,7 @@ export default function CallScreen({
   unread = 0,
   onMute,
   onCamera,
+  onFlip,
   onFixCamera,
   onChat,
   onMap,
@@ -255,6 +263,17 @@ tente
             >
               <CameraIcon on={camera} />
               <span>{camera ? "Câmera" : "Câmera off"}</span>
+            </button>
+
+            <button
+              type="button"
+              className="call__btn"
+              onClick={onFlip}
+              disabled={!camera}
+              aria-label="Trocar entre a câmera da frente e a de trás"
+            >
+              <FlipCameraIcon />
+              <span>Trocar</span>
             </button>
 
             <button type="button" className="call__btn" onClick={onChat} aria-label="Abrir os recados">

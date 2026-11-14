@@ -954,6 +954,15 @@ body {
   border-color: var(--accent100);
 }
 
+.call__btn:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.call__btn:disabled:hover svg {
+  border-color: color-mix(in oklch, var(--accent-base) 30%, transparent);
+}
+
 .call__btn--end:hover svg {
   border-color: #ff8590;
 }

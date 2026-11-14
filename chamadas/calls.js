@@ -13,8 +13,10 @@
 const VIDEO_CONSTRAINTS = {
   width: { ideal: 1280 },
   height: { ideal: 720 },
-  facingMode: "user",
 };
+
+/** "user" é a câmera da frente, "environment" a de trás. */
+const cameraConstraints = (facing) => ({ ...VIDEO_CONSTRAINTS, facingMode: facing });
 
 export class CallSession {
   constructor({ callId, self, kind, iceServers = [], send, onChange, heroOf }) {
@@ -36,6 +38,8 @@ export class CallSession {
     this.mediaError = null;
     this.muted = false;
     this.camera = this.kind === "video";
+    /** Qual lente está a ser usada agora. */
+    this.facing = "user";
 
     this.ready = false;
     this.closed = false;
@@ -73,7 +77,7 @@ export class CallSession {
     try {
       this.local = await navigator.mediaDevices.getUserMedia({
         audio: true,
-        video: wantsVideo ? VIDEO_CONSTRAINTS : false,
+        video: wantsVideo ? cameraConstraints(this.facing) : false,
       });
     } catch {
       // sem câmera a chamada continua só com voz, em vez de morrer
@@ -83,7 +87,7 @@ export class CallSession {
       } catch {
         try {
           this.local = wantsVideo
-            ? await navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS })
+            ? await navigator.mediaDevices.getUserMedia({ video: cameraConstraints(this.facing) })
             : null;
           this.mediaError = this.local
             ? "Microfone bloqueado: você só ouve."
@@ -350,7 +354,9 @@ export class CallSession {
     }
 
     try {
-      const extra = await navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS });
+      const extra = await navigator.mediaDevices.getUserMedia({
+        video: cameraConstraints(this.facing),
+      });
       if (!this.local) this.local = new MediaStream();
 
       const track = extra.getVideoTracks()[0];
@@ -375,6 +381,52 @@ export class CallSession {
   }
 
   /*
+    Troca entre a câmera da frente e a de trás no meio da chamada.
+
+    A faixa nova entra no lugar da antiga nos envios (replaceTrack), por isso a
+    outra pessoa vê a troca na hora, sem renegociar a conexão.
+  */
+  async flipCamera() {
+    const proxima = this.facing === "user" ? "environment" : "user";
+
+    try {
+      const nova = await navigator.mediaDevices.getUserMedia({
+        video: cameraConstraints(proxima),
+      });
+      const track = nova.getVideoTracks()[0];
+
+      // só depois de a nova estar nas mãos é que a antiga é largada
+      const antigas = this.local?.getVideoTracks() ?? [];
+      for (const velha of antigas) {
+        velha.stop();
+        this.local?.removeTrack(velha);
+      }
+
+      if (!this.local) this.local = new MediaStream();
+      this.local.addTrack(track);
+
+      for (const peer of this.peers.values()) {
+        const envio = peer.pc.getSenders().find((sender) => sender.track?.kind === "video");
+
+        try {
+          if (envio) await envio.replaceTrack(track);
+          else peer.pc.addTrack(track, this.local);
+        } catch {
+          /* conexão já fechada */
+        }
+      }
+
+      this.facing = proxima;
+      this.camera = true;
+      this.mediaError = null;
+    } catch {
+      this.mediaError = "Não consegui trocar de câmera neste aparelho.";
+    }
+
+    this.emit();
+  }
+
+  /*
     Reinicia a câmera quando ela dá uma faixa sem imagem.
 
     Acontece no iPhone: a faixa existe, está "ligada", mas não chega nenhum
@@ -391,7 +443,9 @@ export class CallSession {
     }
 
     try {
-      const nova = await navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS });
+      const nova = await navigator.mediaDevices.getUserMedia({
+        video: cameraConstraints(this.facing),
+      });
       const track = nova.getVideoTracks()[0];
 
       if (!this.local) this.local = new MediaStream();
