@@ -11,7 +11,7 @@
     "build:app": "vite build --mode app",
     "android:sync": "npm run build:app && cap sync android",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleRelease && cd .. && cp android/app/build/outputs/apk/release/app-release.apk apk/roda-chamadas.apk",
-    "splash": "node scripts/splash.mjs"
+    "icones": "node scripts/icones.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.3",
