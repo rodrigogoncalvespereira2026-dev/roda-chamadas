@@ -1,0 +1,61 @@
+/* ---------- faixa de versão nova (só no APK) ---------- */
+
+/*
+  `.calls > *` põe os filhos em `position: relative`; o seletor com duas
+  classes ganha essa disputa e mantém a faixa colada ao fundo do ecrã.
+*/
+.calls .atualizar {
+  position: fixed;
+  z-index: 70;
+}
+
+.atualizar {
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in oklch, var(--accent-base, #22c55e) 55%, transparent);
+  border-radius: 16px;
+  background: color-mix(in oklch, #050b07 92%, transparent);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+.atualizar__texto {
+  flex: 1;
+  margin: 0;
+  color: var(--text-light);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.atualizar__texto strong {
+  color: var(--accent100, #22c55e);
+  font-weight: 700;
+}
+
+.atualizar__link {
+  flex: 0 0 auto;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #04120a;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.atualizar__fechar {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line, #23342b);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted, #9db3a6);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}

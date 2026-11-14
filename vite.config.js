@@ -1,11 +1,35 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 const page = (name) => fileURLToPath(new URL(`./${name}`, import.meta.url));
 
+/**
+ * Versão do APK, lida do build.gradle: é a mesma que o instalador mostra e a
+ * que fica gravada no bundle, para a app saber que versão está a correr.
+ */
+function versaoDoApk() {
+  try {
+    const gradle = readFileSync(new URL("./android/app/build.gradle", import.meta.url), "utf8");
+
+    return {
+      nome: gradle.match(/versionName\s+"([^"]+)"/)?.[1] ?? "0.0",
+      codigo: Number(gradle.match(/versionCode\s+(\d+)/)?.[1]) || 0,
+    };
+  } catch {
+    return { nome: "0.0", codigo: 0 };
+  }
+}
+
+const versao = versaoDoApk();
+
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __VERSAO_APP__: JSON.stringify(versao.nome),
+    __CODIGO_APP__: JSON.stringify(versao.codigo),
+  },
   server: {
     port: 5173,
     strictPort: true,

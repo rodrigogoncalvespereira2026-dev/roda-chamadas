@@ -166,6 +166,7 @@ function dropCall(call, reason, by) {
  * WebSocket de /ws.
  */
 const APK = resolve(process.cwd(), "apk/roda-chamadas.apk");
+const VERSAO = resolve(process.cwd(), "apk/versao.json");
 
 const GONE = `<!doctype html>
 <meta charset="utf-8" />
@@ -259,6 +260,26 @@ const server = createServer(async (req, res) => {
       res.end("O APK ainda não foi gerado.");
       return;
     }
+  }
+
+  /* Versão do instalador publicado, escrita quando o APK é compilado. */
+  if (url.pathname === "/versao") {
+    try {
+      const dados = await readFile(VERSAO, "utf8");
+
+      res.writeHead(200, {
+        "content-type": "application/json; charset=utf-8",
+        "content-length": Buffer.byteLength(dados),
+        "cache-control": "no-store",
+        // o APK chama de outra origem (https://localhost dentro da app)
+        "access-control-allow-origin": "*",
+      });
+      res.end(req.method === "HEAD" ? undefined : dados);
+    } catch {
+      res.writeHead(204, { "access-control-allow-origin": "*" });
+      res.end();
+    }
+    return;
   }
 
   if (ehAppleMovel(req.headers["user-agent"] ?? "")) {

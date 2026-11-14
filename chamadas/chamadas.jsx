@@ -4,6 +4,7 @@ import ThemeWheel from "../carrossel/ThemeWheel";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import Identity from "./Identity";
 import Instalar from "./Instalar";
+import Atualizar from "./Atualizar";
 import IncomingCall from "./IncomingCall";
 import CallScreen from "./CallScreen";
 import ChatPanel from "./ChatPanel";
@@ -14,6 +15,7 @@ import { createRealtime } from "./realtime";
 import { readPosition } from "./geo";
 import { IS_NATIVE } from "./plataforma";
 import { PRECISA_INSTALAR } from "./instalacao";
+import { VERSAO_APP, versaoPublicada } from "./versao";
 import { THEMES, themeById } from "../carrossel/themes";
 import { STATUS_LABEL } from "./status";
 import {
@@ -93,6 +95,9 @@ function CallsApp() {
     const hero = sessionStorage.getItem("roda:hero");
     return hero ? { hero } : null;
   });
+  /* Dentro do APK, a versão publicada no servidor pode ser mais nova que esta. */
+  const [novaVersao, setNovaVersao] = useState(null);
+
   const [connection, setConnection] = useState("offline");
   const [me, setMe] = useState(null);
   const [people, setPeople] = useState(() => offlineRoster());
@@ -508,6 +513,21 @@ function CallsApp() {
     return () => offs.forEach((off) => off());
   }, [appendMessage, closeSession, notify, openSession, vibrate]);
 
+  /* Só o APK tem versão para comparar: o site é sempre o que está no servidor. */
+  useEffect(() => {
+    if (!IS_NATIVE) return undefined;
+
+    let vivo = true;
+
+    versaoPublicada().then((publicada) => {
+      if (vivo && publicada && publicada.codigo > VERSAO_APP.codigo) setNovaVersao(publicada);
+    });
+
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
   /* ---------- entrar ---------- */
 
   const enter = useCallback(({ hero }) => {
@@ -670,7 +690,14 @@ function CallsApp() {
   }
 
   if (!identity) {
-    return <Identity onEnter={enter} notice={error} />;
+    return (
+      <>
+        <Identity onEnter={enter} notice={error} />
+        {novaVersao ? (
+          <Atualizar versao={novaVersao} onFechar={() => setNovaVersao(null)} />
+        ) : null}
+      </>
+    );
   }
 
   const accent = themeById(focus?.hero ?? identity.hero).accent;
@@ -1071,6 +1098,8 @@ function CallsApp() {
           Chamada {kind === "video" ? "de vídeo" : "de voz"} com WebRTC · {formatTime(elapsed)} no canal
         </p>
       </footer>
+
+      {novaVersao ? <Atualizar versao={novaVersao} onFechar={() => setNovaVersao(null)} /> : null}
     </main>
   );
 }
