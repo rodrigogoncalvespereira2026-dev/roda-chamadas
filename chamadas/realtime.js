@@ -6,6 +6,8 @@
   O protocolo é só JSON com um campo `t`.
 */
 
+import { WS_URL } from "./plataforma";
+
 export function createRealtime() {
   const handlers = new Map();
 
@@ -27,11 +29,8 @@ export function createRealtime() {
     emit("status", next);
   };
 
-  /** Mesma origem do site: o Vite faz proxy de /ws no dev, o Node atende em produção. */
-  const address = () => {
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    return `${proto}://${window.location.host}/ws`;
-  };
+  /** No navegador é a mesma origem; no APK é o servidor fixo do build. */
+  const address = () => WS_URL;
 
   function scheduleReconnect() {
     clearTimeout(timer);

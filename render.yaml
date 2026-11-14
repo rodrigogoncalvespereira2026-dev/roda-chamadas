@@ -1,11 +1,12 @@
 services:
-  # Web Service (não static): o mesmo processo serve o dist/ e mantém o
-  # WebSocket de sinalização em /ws.
+  # Web Service (não static): o processo mantém o WebSocket de sinalização em
+  # /ws e entrega o instalador em /app.apk. Não há site — nada da roda abre no
+  # navegador.
   - type: web
     name: roda-chamadas
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci
     startCommand: node server.js
     envVars:
       - key: NODE_VERSION
