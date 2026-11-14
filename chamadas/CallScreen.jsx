@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import { themeById } from "../carrossel/themes";
 import { CameraIcon, ChatTabIcon, MicIcon, PhoneOffIcon, PinIcon } from "./icons";
@@ -28,8 +28,25 @@ function formatTime(seconds) {
   Por isso o elemento é montado à mão no efeito, e cada um dos três casos tem
   o seu remédio aqui.
 */
+/** Seta de reproduzir, para o botão que destrava o vídeo no iPhone. */
+function PlayGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M8 5.4v13.2L19.2 12 8 5.4Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 function Stream({ stream, muted, className }) {
   const ref = useRef(null);
+  /* O iPhone começa com o vídeo parado à espera de um toque: enquanto isso,
+     o quadrado preto ganha um botão em vez de ficar mudo e sem explicação. */
+  const [parado, setParado] = useState(true);
+  const temVideo = Boolean(stream?.getVideoTracks?.().length);
+
+  const tocar = () => {
+    ref.current?.play?.().catch(() => {});
+  };
 
   useEffect(() => {
     const node = ref.current;
@@ -63,13 +80,24 @@ function Stream({ stream, muted, className }) {
     const faixaNova = () => ligar(true);
     stream?.addEventListener?.("addtrack", faixaNova);
 
+    // o botão só aparece enquanto o elemento está mesmo parado
+    const conferir = () => setParado(node.paused || node.readyState < 2);
+    const aoReproduzir = () => setParado(false);
+
+    node.addEventListener("playing", aoReproduzir);
+    node.addEventListener("pause", conferir);
+    const relogio = setTimeout(conferir, 1200);
+
     // um toque em qualquer sítio da chamada libera o que o iOS barrou
     document.addEventListener("pointerdown", tentarDeNovo);
     document.addEventListener("touchend", tentarDeNovo);
 
     return () => {
+      clearTimeout(relogio);
       node.removeEventListener("loadedmetadata", tentarDeNovo);
       node.removeEventListener("canplay", tentarDeNovo);
+      node.removeEventListener("playing", aoReproduzir);
+      node.removeEventListener("pause", conferir);
       stream?.removeEventListener?.("addtrack", faixaNova);
       document.removeEventListener("pointerdown", tentarDeNovo);
       document.removeEventListener("touchend", tentarDeNovo);
@@ -77,7 +105,18 @@ function Stream({ stream, muted, className }) {
     };
   }, [stream, muted]);
 
-  return <video ref={ref} className={className} autoPlay playsInline muted={muted} />;
+  return (
+    <>
+      <video ref={ref} className={className} autoPlay playsInline muted={muted} />
+
+      {parado && temVideo ? (
+        <button type="button" className="room__play" onClick={tocar}>
+          <PlayGlyph />
+          Ver
+        </button>
+      ) : null}
+    </>
+  );
 }
 
 const PEER_STATE = {

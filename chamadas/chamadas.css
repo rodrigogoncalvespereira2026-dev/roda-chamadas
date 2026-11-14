@@ -1894,6 +1894,38 @@ body {
   object-fit: cover;
 }
 
+/* Botão que destrava o vídeo quando o iOS bloqueia a reprodução automática. */
+.room__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  transform: translate(-50%, -50%);
+  border: 1px solid color-mix(in oklch, var(--accent-base) 60%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, #050b07 76%, transparent);
+  color: var(--text-light);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.room__play svg {
+  width: 15px;
+  height: 15px;
+  color: var(--accent100);
+}
+
+.room__self .room__play {
+  padding: 6px 11px;
+  font-size: 11px;
+}
+
 .room__avatar {
   display: grid;
   place-items: center;
