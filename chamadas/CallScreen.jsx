@@ -37,7 +37,7 @@ function PlayGlyph() {
   );
 }
 
-function Stream({ stream, muted, className }) {
+function Stream({ stream, muted, className, onImagem }) {
   const ref = useRef(null);
   /* O iPhone começa com o vídeo parado à espera de um toque: enquanto isso,
      o quadrado preto ganha um botão em vez de ficar mudo e sem explicação. */
@@ -82,6 +82,13 @@ function Stream({ stream, muted, className }) {
 
     // o botão só aparece enquanto o elemento está mesmo parado
     const conferir = () => setParado(node.paused || node.readyState < 2);
+
+    // "tem imagem?" é diferente de "tem faixa": um iPhone pode dar uma faixa
+    // de câmera sem imagem nenhuma, e só a largura do vídeo revela isso.
+    const medir = () => onImagem?.(node.videoWidth);
+    node.addEventListener("loadedmetadata", medir);
+    node.addEventListener("playing", medir);
+    const medida = setTimeout(medir, 1500);
     const aoReproduzir = () => setParado(false);
 
     node.addEventListener("playing", aoReproduzir);
@@ -94,6 +101,9 @@ function Stream({ stream, muted, className }) {
 
     return () => {
       clearTimeout(relogio);
+      clearTimeout(medida);
+      node.removeEventListener("loadedmetadata", medir);
+      node.removeEventListener("playing", medir);
       node.removeEventListener("loadedmetadata", tentarDeNovo);
       node.removeEventListener("canplay", tentarDeNovo);
       node.removeEventListener("playing", aoReproduzir);
@@ -103,7 +113,7 @@ function Stream({ stream, muted, className }) {
       document.removeEventListener("touchend", tentarDeNovo);
       node.srcObject = null;
     };
-  }, [stream, muted]);
+  }, [stream, muted, onImagem]);
 
   return (
     <>
@@ -146,6 +156,8 @@ export default function CallScreen({
 }) {
   const accent = themeById(call.members[0]?.hero ?? "cat").accent;
   const localVideo = Boolean(local?.getVideoTracks().some((track) => track.enabled));
+  /* Largura do meu vídeo: 0 = a câmera deu faixa mas não está a enviar imagem. */
+  const [larguraLocal, setLarguraLocal] = useState(null);
   const status = ringing ? "Chamando…" : formatTime(elapsed);
 
   return (
@@ -193,13 +205,20 @@ export default function CallScreen({
 
         {localVideo ? (
           <div className="room__self">
-            <Stream stream={local} muted className="room__video" />
+            <Stream stream={local} muted className="room__video" onImagem={setLarguraLocal} />
             <span className="room__tag">você</span>
           </div>
         ) : null}
       </div>
 
       {mediaError ? <p className="calls__notice">{mediaError}</p> : null}
+
+      {localVideo && larguraLocal === 0 && elapsed > 3 ? (
+        <p className="calls__notice">
+          A câmera não está a enviar imagem. Toque em “Câmera off” e ligue outra vez; se
+          continuar, confira a permissão da câmera nas definições do site.
+        </p>
+      ) : null}
 
       <div className="call__actions">
         {ringing ? (
