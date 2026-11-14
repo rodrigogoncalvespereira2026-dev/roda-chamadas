@@ -1,8 +1,8 @@
 {
-  "versao": "1.7",
-  "codigo": 8,
+  "versao": "1.8",
+  "codigo": 9,
   "novidades": [
-    "Diagnóstico da câmera de trás: mostra qual câmera o sistema entregou",
-    "Liberta a câmera atual antes de pedir a outra"
+    "Novo ícone no botão de encerrar chamada",
+    "Interface mais confortável no telemóvel"
   ]
 }
