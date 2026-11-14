@@ -1,45 +1,119 @@
-/* ---------- instalação no iPhone ---------- */
+/* ---------- instalação (um botão antes de abrir) ---------- */
 
 .instalacao {
-  gap: 22px;
+  display: grid;
+  place-items: center;
+}
+
+.instalacao__capa {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 380px;
+  padding: 8px 0 0;
+  text-align: center;
+}
+
+.instalacao__icone {
+  width: 104px;
+  height: 104px;
+  border-radius: 26px;
+  box-shadow: 0 18px 44px color-mix(in oklch, var(--accent-base) 26%, transparent);
+}
+
+.instalacao__titulo {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--text-light);
+}
+
+.instalacao__sub {
+  margin: 0;
+  max-width: 32ch;
+}
+
+.instalacao__instalar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 16px 34px;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 60%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--accent-base) 34%, #06110a),
+    color-mix(in oklch, var(--accent-base) 18%, #06110a)
+  );
+  color: var(--text-light);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 14px 34px color-mix(in oklch, var(--accent-base) 30%, transparent);
+}
+
+.instalacao__instalar svg {
+  width: 21px;
+  height: 21px;
+  color: var(--accent100);
+}
+
+.instalacao__instalar:hover {
+  border-color: var(--accent80);
+}
+
+.instalacao__instalar:active {
+  transform: translateY(1px);
+}
+
+.instalacao__instalar:focus-visible {
+  outline: 2px solid var(--accent80);
+  outline-offset: 3px;
 }
 
 .instalacao__passos {
   display: grid;
-  gap: 10px;
-  margin: 0;
+  gap: 8px;
+  width: 100%;
+  margin: 6px 0 0;
   padding: 0;
   list-style: none;
+  text-align: left;
 }
 
 .instalacao__passo {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
+  gap: 12px;
+  padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--surface);
 }
 
 .instalacao__numero {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   flex: 0 0 auto;
   border-radius: 50%;
   background: color-mix(in oklch, var(--accent-base) 22%, transparent);
   color: var(--accent100);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .instalacao__passo p {
   margin: 0;
   color: var(--accent60);
-  font-size: 13.5px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .instalacao__passo strong {
@@ -48,36 +122,26 @@
 }
 
 .instalacao__glyph {
-  width: 16px;
-  height: 16px;
-  margin-left: 4px;
+  width: 15px;
+  height: 15px;
+  margin-left: 3px;
   vertical-align: -3px;
   color: var(--accent100);
 }
 
-.instalacao__acoes {
-  display: grid;
-  gap: 12px;
-  justify-items: start;
-}
-
-.instalacao__btn {
-  padding: 12px 20px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--overlay);
-  color: var(--accent100);
+.instalacao__depois {
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: var(--accent60);
   font: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
 
-.instalacao__btn:hover {
-  border-color: var(--accent80);
-}
-
-.instalacao__btn:focus-visible {
-  outline: 2px solid var(--accent80);
-  outline-offset: 2px;
+.instalacao__depois:hover {
+  color: var(--accent100);
 }

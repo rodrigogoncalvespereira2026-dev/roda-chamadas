@@ -1,15 +1,40 @@
+import { useEffect, useState } from "react";
 import { themeById } from "../carrossel/themes";
 import "./instalacao.css";
 
 /**
- * Porta de entrada do iPhone: antes de a roda abrir, a app pede para ser
- * instalada no ecrã principal.
+ * Porta de entrada do iPhone: um botão para instalar a app antes de a roda
+ * abrir.
  *
- * No iOS não há loja nem APK: uma página do Safari passa a app quando o
- * utilizador a põe no ecrã principal. Esse passo é do Safari — o JavaScript não
- * consegue abrir o menu por ninguém — por isso o ecrã ensina o caminho e deixar
- * seguir no navegador é uma escolha explícita de quem está a usar.
+ * Onde o navegador permite (Chrome, Edge, Android), o botão abre o pedido de
+ * instalação do próprio sistema. No Safari do iPhone não existe esse pedido:
+ * a única forma é "Adicionar ao Ecrã Principal", que é um menu do sistema. Aí
+ * o botão não pode instalar sozinho, então mostra o caminho exato a seguir.
  */
+
+/** Seta para dentro de uma caixa: o desenho de "baixar/instalar". */
+function InstallIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 3.5v10.4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" fill="none" />
+      <path
+        d="m7.7 9.9 4.3 4.3 4.3-4.3"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <path
+        d="M4.5 16.6v2.3A1.8 1.8 0 0 0 6.3 20.7h11.4a1.8 1.8 0 0 0 1.8-1.8v-2.3"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
 
 /** Ícone de partilhar do iOS: quadrado com a seta a sair por cima. */
 function ShareIcon() {
@@ -36,63 +61,80 @@ function ShareIcon() {
 }
 
 export default function Instalar({ onContinuar }) {
+  const [pedido, setPedido] = useState(null);
+  const [passos, setPassos] = useState(false);
+
+  /* O Chrome/Edge guardam o pedido de instalação num evento; o botão dispara-o. */
+  useEffect(() => {
+    const guardar = (event) => {
+      event.preventDefault();
+      setPedido(event);
+    };
+
+    window.addEventListener("beforeinstallprompt", guardar);
+    return () => window.removeEventListener("beforeinstallprompt", guardar);
+  }, []);
+
+  const instalar = async () => {
+    if (pedido) {
+      await pedido.prompt();
+      setPedido(null);
+      return;
+    }
+
+    setPassos(true);
+  };
+
   return (
     <main className="calls calls--gate instalacao" style={{ "--accent-base": themeById("cat").accent }}>
-      <header className="calls__head">
-        <p className="calls__eyebrow">Roda de Chamadas</p>
-        <h1>Instale a app no iPhone</h1>
-        <p className="calls__sub">
-          No iPhone a Roda de Chamadas não vem de uma loja: fica no ecrã principal, com o ícone
-          da roda, e a partir daí abre em ecrã inteiro como qualquer outra app.
+      <div className="instalacao__capa">
+        <img className="instalacao__icone" src="/icons/icon-192.png" alt="" width="104" height="104" />
+
+        <h1 className="instalacao__titulo">Roda de Chamadas</h1>
+        <p className="calls__sub instalacao__sub">
+          Instale a app para girar a roda e chamar o time direto do ecrã principal, em ecrã
+          inteiro.
         </p>
-      </header>
 
-      <ol className="instalacao__passos">
-        <li className="instalacao__passo">
-          <span className="instalacao__numero" aria-hidden="true">
-            1
-          </span>
-          <p>
-            Toque em <strong>Partilhar</strong> na barra do Safari <ShareIcon />
-          </p>
-        </li>
+        <button type="button" className="instalacao__instalar" onClick={instalar}>
+          <InstallIcon />
+          Instalar
+        </button>
 
-        <li className="instalacao__passo">
-          <span className="instalacao__numero" aria-hidden="true">
-            2
-          </span>
-          <p>
-            Na lista, escolha <strong>Adicionar ao Ecrã Principal</strong>
-          </p>
-        </li>
+        {passos ? (
+          <ol className="instalacao__passos">
+            <li className="instalacao__passo">
+              <span className="instalacao__numero" aria-hidden="true">
+                1
+              </span>
+              <p>
+                Toque em <strong>Partilhar</strong> na barra do Safari <ShareIcon />
+              </p>
+            </li>
 
-        <li className="instalacao__passo">
-          <span className="instalacao__numero" aria-hidden="true">
-            3
-          </span>
-          <p>
-            Confirme em <strong>Adicionar</strong>
-          </p>
-        </li>
+            <li className="instalacao__passo">
+              <span className="instalacao__numero" aria-hidden="true">
+                2
+              </span>
+              <p>
+                Escolha <strong>Adicionar ao Ecrã Principal</strong>
+              </p>
+            </li>
 
-        <li className="instalacao__passo">
-          <span className="instalacao__numero" aria-hidden="true">
-            4
-          </span>
-          <p>
-            Abra pelo ícone <strong>Roda de Chamadas</strong> — a app abre sem a barra do Safari
-          </p>
-        </li>
-      </ol>
+            <li className="instalacao__passo">
+              <span className="instalacao__numero" aria-hidden="true">
+                3
+              </span>
+              <p>
+                Confirme em <strong>Adicionar</strong> e abra pelo ícone
+              </p>
+            </li>
+          </ol>
+        ) : null}
 
-      <div className="instalacao__acoes">
-        <button type="button" className="instalacao__btn" onClick={onContinuar}>
+        <button type="button" className="instalacao__depois" onClick={onContinuar}>
           Continuar no Safari
         </button>
-        <p className="calls__notice">
-          Enquanto não instalar, a app funciona aqui mesmo, mas sem o ícone no ecrã principal e
-          sem ecrã inteiro.
-        </p>
       </div>
     </main>
   );
