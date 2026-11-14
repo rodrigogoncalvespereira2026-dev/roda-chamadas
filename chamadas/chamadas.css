@@ -1903,6 +1903,15 @@ body {
   object-fit: cover;
 }
 
+/*
+  O meu próprio vídeo aparece como num espelho — é assim que as pessoas se
+  esperam ver com a câmera da frente. O que a outra pessoa recebe não é
+  espelhado: só esta cópia na minha tela o é.
+*/
+.room__video--espelho {
+  transform: scaleX(-1);
+}
+
 /* Botão que destrava o vídeo quando o iOS bloqueia a reprodução automática. */
 .room__play {
   position: absolute;

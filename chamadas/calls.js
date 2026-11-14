@@ -66,6 +66,66 @@ export class CallSession {
     this.emit();
   }
 
+  /**
+   * Pede uma lente específica e devolve o stream dela.
+   *
+   * Alguns Android ignoram o `facingMode` e devolvem sempre a câmera que já
+   * estava aberta, por isso o pedido é repetido em três degraus: primeiro
+   * exigindo a lente (`exact`), depois aceitando-a como preferência e, por
+   * fim, escolhendo pelo nome da câmera na lista de aparelhos. Em cada degrau
+   * confere-se o que o sistema diz ter entregado.
+   */
+  async cameraStream(facing) {
+    let ultimoErro = null;
+
+    for (const modo of [{ exact: facing }, facing]) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { ...VIDEO_CONSTRAINTS, facingMode: modo },
+        });
+        const entregue = stream.getVideoTracks()[0]?.getSettings?.().facingMode;
+
+        if (entregue && entregue !== facing) {
+          stream.getTracks().forEach((track) => track.stop());
+          continue;
+        }
+
+        return stream;
+      } catch (erro) {
+        ultimoErro = erro;
+      }
+    }
+
+    const porAparelho = await this.cameraPorAparelho(facing);
+    if (porAparelho) return porAparelho;
+
+    throw ultimoErro ?? new Error("A outra câmera não está disponível.");
+  }
+
+  /** Último recurso: escolher a câmera pelo nome, na lista de aparelhos. */
+  async cameraPorAparelho(facing) {
+    try {
+      const lista = (await navigator.mediaDevices.enumerateDevices?.()) ?? [];
+      const cameras = lista.filter((item) => item.kind === "videoinput" && item.deviceId);
+
+      const alvo = cameras.find((item) => {
+        const nome = (item.label ?? "").toLowerCase();
+
+        return facing === "environment"
+          ? nome.includes("back") || nome.includes("rear") || nome.includes("trás")
+          : nome.includes("front") || nome.includes("frente") || nome.includes("user");
+      });
+
+      if (!alvo) return null;
+
+      return await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: alvo.deviceId } },
+      });
+    } catch {
+      return null;
+    }
+  }
+
   async prepareMedia() {
     if (!navigator.mediaDevices?.getUserMedia) {
       this.mediaError = "Este navegador não libera microfone e câmera.";
@@ -354,9 +414,7 @@ export class CallSession {
     }
 
     try {
-      const extra = await navigator.mediaDevices.getUserMedia({
-        video: cameraConstraints(this.facing),
-      });
+      const extra = await this.cameraStream(this.facing);
       if (!this.local) this.local = new MediaStream();
 
       const track = extra.getVideoTracks()[0];
@@ -390,10 +448,12 @@ export class CallSession {
     const proxima = this.facing === "user" ? "environment" : "user";
 
     try {
-      const nova = await navigator.mediaDevices.getUserMedia({
-        video: cameraConstraints(proxima),
-      });
+      const nova = await this.cameraStream(proxima);
       const track = nova.getVideoTracks()[0];
+      const entregue = track?.getSettings?.().facingMode;
+
+      // o sistema pode ter devolvido a mesma lente: melhor avisar que fingir
+      if (entregue && entregue !== proxima) throw new Error("a lente não trocou");
 
       // só depois de a nova estar nas mãos é que a antiga é largada
       const antigas = this.local?.getVideoTracks() ?? [];
@@ -420,7 +480,10 @@ export class CallSession {
       this.camera = true;
       this.mediaError = null;
     } catch {
-      this.mediaError = "Não consegui trocar de câmera neste aparelho.";
+      this.mediaError =
+        proxima === "environment"
+          ? "Este aparelho não liberou a câmera de trás. A chamada segue na da frente."
+          : "Não consegui voltar para a câmera da frente.";
     }
 
     this.emit();
@@ -443,9 +506,7 @@ export class CallSession {
     }
 
     try {
-      const nova = await navigator.mediaDevices.getUserMedia({
-        video: cameraConstraints(this.facing),
-      });
+      const nova = await this.cameraStream(this.facing);
       const track = nova.getVideoTracks()[0];
 
       if (!this.local) this.local = new MediaStream();
@@ -509,6 +570,8 @@ export class CallSession {
       peers,
       muted: this.muted,
       camera: this.camera,
+      /** a tela espelha o próprio vídeo quando a lente é a da frente */
+      facing: this.facing,
       mediaError: this.mediaError,
       kind: this.kind,
     };

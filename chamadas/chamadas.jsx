@@ -971,6 +971,7 @@ function CallsApp() {
               local={view?.local ?? null}
               muted={view?.muted ?? false}
               camera={view?.camera ?? kind === "video"}
+              facing={view?.facing ?? "user"}
               mediaError={view?.mediaError ?? ""}
               ringing={call.phase === "ringing"}
               elapsed={elapsed}

@@ -151,6 +151,7 @@ export default function CallScreen({
   local,
   muted,
   camera,
+  facing = "user",
   mediaError,
   ringing,
   elapsed,
@@ -214,7 +215,12 @@ export default function CallScreen({
 
         {localVideo ? (
           <div className="room__self">
-            <Stream stream={local} muted className="room__video" onImagem={setLarguraLocal} />
+            <Stream
+              stream={local}
+              muted
+              className={`room__video${facing === "user" ? " room__video--espelho" : ""}`}
+              onImagem={setLarguraLocal}
+            />
             <span className="room__tag">você</span>
           </div>
         ) : null}

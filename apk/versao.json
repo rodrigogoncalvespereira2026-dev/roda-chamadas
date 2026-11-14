@@ -1,7 +1,8 @@
 {
-  "versao": "1.5",
-  "codigo": 6,
+  "versao": "1.6",
+  "codigo": 7,
   "novidades": [
-    "Versão de teste da atualização dentro da app"
+    "A câmera de trás passa a funcionar no APK",
+    "O meu vídeo aparece como num espelho; o que a outra pessoa vê fica na orientação real"
   ]
 }
