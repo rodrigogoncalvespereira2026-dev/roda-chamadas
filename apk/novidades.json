@@ -1,4 +1,8 @@
 {
+  "8": [
+    "Diagnóstico da câmera de trás: mostra qual câmera o sistema entregou",
+    "Liberta a câmera atual antes de pedir a outra"
+  ],
   "7": [
     "A câmera de trás passa a funcionar no APK",
     "O meu vídeo aparece como num espelho; o que a outra pessoa vê fica na orientação real"

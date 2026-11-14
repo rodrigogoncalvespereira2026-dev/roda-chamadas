@@ -76,51 +76,118 @@ export class CallSession {
    * confere-se o que o sistema diz ter entregado.
    */
   async cameraStream(facing) {
+    const atual = this.local?.getVideoTracks?.()[0];
+    const deviceAtual = atual?.getSettings?.().deviceId;
     let ultimoErro = null;
 
-    for (const modo of [{ exact: facing }, facing]) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { ...VIDEO_CONSTRAINTS, facingMode: modo },
-        });
-        const entregue = stream.getVideoTracks()[0]?.getSettings?.().facingMode;
+    // 1) pela lista de aparelhos: é o mais fiável quando há nomes
+    const porAparelho = await this.cameraPorAparelho(facing, deviceAtual);
+    if (porAparelho) {
+      const track = porAparelho.getVideoTracks()[0];
+      console.warn("[camera] porAparelho ok:", track?.getSettings?.(), track?.label);
+      return porAparelho;
+    }
+    console.warn("[camera] porAparelho não deu, tenta exact/preferência");
 
-        if (entregue && entregue !== facing) {
-          stream.getTracks().forEach((track) => track.stop());
-          continue;
-        }
+    // 2) exigindo a lente
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { ...VIDEO_CONSTRAINTS, facingMode: { exact: facing } },
+      });
+      const novo = stream.getVideoTracks()[0];
 
+      console.warn("[camera] exact tentou:", novo?.getSettings?.(), "deviceAtual:", deviceAtual);
+
+      if (deviceAtual && novo?.getSettings?.().deviceId === deviceAtual) {
+        stream.getTracks().forEach((track) => track.stop());
+      } else {
         return stream;
-      } catch (erro) {
-        ultimoErro = erro;
       }
+    } catch (erro) {
+      console.warn("[camera] exact falhou:", erro?.name, erro?.message);
+      ultimoErro = erro;
     }
 
-    const porAparelho = await this.cameraPorAparelho(facing);
-    if (porAparelho) return porAparelho;
+    // 3) como preferência
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { ...VIDEO_CONSTRAINTS, facingMode: facing },
+      });
+      const novo = stream.getVideoTracks()[0];
 
-    throw ultimoErro ?? new Error("A outra câmera não está disponível.");
+      console.warn("[camera] preferência tentou:", novo?.getSettings?.(), "deviceAtual:", deviceAtual);
+
+      if (deviceAtual && novo?.getSettings?.().deviceId === deviceAtual) {
+        stream.getTracks().forEach((track) => track.stop());
+      } else {
+        return stream;
+      }
+    } catch (erro) {
+      console.warn("[camera] preferência falhou:", erro?.name, erro?.message);
+      ultimoErro = erro;
+    }
+
+    console.warn("[camera] nenhuma via funcionou, a lançar erro");
+    throw ultimoErro ?? new Error("A outra câmera não está disponível neste aparelho.");
   }
 
-  /** Último recurso: escolher a câmera pelo nome, na lista de aparelhos. */
-  async cameraPorAparelho(facing) {
+  /**
+   * Escolhe a câmera pelo nome, com vários candidatos e heurísticas de índice
+   * para os casos em que o nome não diz nada (alguns WebView omitem-nos).
+   */
+  async cameraPorAparelho(facing, deviceAtual) {
     try {
       const lista = (await navigator.mediaDevices.enumerateDevices?.()) ?? [];
       const cameras = lista.filter((item) => item.kind === "videoinput" && item.deviceId);
 
-      const alvo = cameras.find((item) => {
+      // diagnóstico: mostra o que o sistema viu, para perceber se há duas câmeras
+      try {
+        console.warn("[camera] aparelhos:", cameras.map((c) => ({ id: c.deviceId, label: c.label })));
+      } catch {
+        /* silencioso */
+      }
+
+      if (!cameras.length) return null;
+
+      const candidatos = [];
+      const querTras = facing === "environment";
+
+      for (const item of cameras) {
         const nome = (item.label ?? "").toLowerCase();
+        const combina = querTras
+          ? nome.includes("back") || nome.includes("rear") || nome.includes("trás") || nome.includes("traseira")
+          : nome.includes("front") || nome.includes("frente") || nome.includes("user") || nome.includes("selfie");
 
-        return facing === "environment"
-          ? nome.includes("back") || nome.includes("rear") || nome.includes("trás")
-          : nome.includes("front") || nome.includes("frente") || nome.includes("user");
-      });
+        if (combina) candidatos.push(item);
+      }
 
-      if (!alvo) return null;
+      // sem nomes: tenta o índice típico (0 = trás em muitos Android)
+      if (candidatos.length === 0 && cameras.length >= 2) {
+        const indice = querTras ? 0 : 1;
+        if (cameras[indice]) candidatos.push(cameras[indice]);
+      }
 
-      return await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: alvo.deviceId } },
-      });
+      for (const alvo of candidatos) {
+        if (alvo.deviceId === deviceAtual) continue;
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: alvo.deviceId } },
+          });
+          const novo = stream.getVideoTracks()[0];
+
+          if (deviceAtual && novo?.getSettings?.().deviceId === deviceAtual) {
+            stream.getTracks().forEach((track) => track.stop());
+            continue;
+          }
+
+          return stream;
+        } catch {
+          /* tenta o próximo candidato */
+        }
+      }
+
+      return null;
     } catch {
       return null;
     }
@@ -445,47 +512,53 @@ export class CallSession {
     outra pessoa vê a troca na hora, sem renegociar a conexão.
   */
   async flipCamera() {
-    const proxima = this.facing === "user" ? "environment" : "user";
+    const inicial = this.facing;
+    const proxima = inicial === "user" ? "environment" : "user";
+
+    // libertar a câmera atual primeiro: em muitos Android a segunda só abre
+    // depois de a primeira ser largada (o WebView segura o dispositivo).
+    const antigas = this.local?.getVideoTracks() ?? [];
+    antigas.forEach((track) => track.stop());
+    antigas.forEach((track) => this.local?.removeTrack(track));
+
+    let nova = null;
+    let trocou = true;
 
     try {
-      const nova = await this.cameraStream(proxima);
-      const track = nova.getVideoTracks()[0];
-      const entregue = track?.getSettings?.().facingMode;
-
-      // o sistema pode ter devolvido a mesma lente: melhor avisar que fingir
-      if (entregue && entregue !== proxima) throw new Error("a lente não trocou");
-
-      // só depois de a nova estar nas mãos é que a antiga é largada
-      const antigas = this.local?.getVideoTracks() ?? [];
-      for (const velha of antigas) {
-        velha.stop();
-        this.local?.removeTrack(velha);
+      nova = await this.cameraStream(proxima);
+    } catch (erro) {
+      console.warn("[camera] flipCamera não abriu a pedida:", erro?.name, erro?.message);
+      // não abriu a pedida: tenta reabrir a que estava, para não ficar sem câmera
+      try {
+        nova = await this.cameraStream(inicial);
+        trocou = false;
+      } catch (erro2) {
+        console.warn("[camera] flipCamera também não reabriu a inicial:", erro2?.name, erro2?.message);
+        this.mediaError =
+          "Não consegui trocar de câmera neste aparelho. Feche outros apps que usam a câmera e tente outra vez.";
+        this.emit();
+        return;
       }
-
-      if (!this.local) this.local = new MediaStream();
-      this.local.addTrack(track);
-
-      for (const peer of this.peers.values()) {
-        const envio = peer.pc.getSenders().find((sender) => sender.track?.kind === "video");
-
-        try {
-          if (envio) await envio.replaceTrack(track);
-          else peer.pc.addTrack(track, this.local);
-        } catch {
-          /* conexão já fechada */
-        }
-      }
-
-      this.facing = proxima;
-      this.camera = true;
-      this.mediaError = null;
-    } catch {
-      this.mediaError =
-        proxima === "environment"
-          ? "Este aparelho não liberou a câmera de trás. A chamada segue na da frente."
-          : "Não consegui voltar para a câmera da frente.";
     }
 
+    const track = nova.getVideoTracks()[0];
+    if (!this.local) this.local = new MediaStream();
+    this.local.addTrack(track);
+
+    for (const peer of this.peers.values()) {
+      const envio = peer.pc.getSenders().find((sender) => sender.track?.kind === "video");
+
+      try {
+        if (envio) await envio.replaceTrack(track);
+        else peer.pc.addTrack(track, this.local);
+      } catch {
+        /* conexão já fechada */
+      }
+    }
+
+    this.facing = trocou ? proxima : inicial;
+    this.camera = true;
+    this.mediaError = null;
     this.emit();
   }
 
