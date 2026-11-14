@@ -25,7 +25,13 @@ export async function versaoPublicada() {
     const codigo = Number(dados?.codigo);
 
     if (!Number.isFinite(codigo)) return null;
-    return { versao: String(dados.versao ?? codigo), codigo };
+
+    // três chegam: a faixa não pode tapar meia chamada
+    const novidades = Array.isArray(dados.novidades)
+      ? dados.novidades.map(String).filter(Boolean).slice(0, 3)
+      : [];
+
+    return { versao: String(dados.versao ?? codigo), codigo, novidades };
   } catch {
     /* sem rede: não há aviso nenhum, a app segue como está */
     return null;

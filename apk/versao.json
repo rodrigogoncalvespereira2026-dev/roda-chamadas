@@ -1,1 +1,10 @@
-{"versao":"1.2","codigo":3}
+{
+  "versao": "1.2",
+  "codigo": 3,
+  "novidades": [
+    "Botão Trocar, para passar à câmera de trás a meio da chamada",
+    "Aviso de câmera sem imagem, com botão para a reiniciar",
+    "Botão Ver nos vídeos que o sistema deixou parados",
+    "Este aviso de versão nova"
+  ]
+}
