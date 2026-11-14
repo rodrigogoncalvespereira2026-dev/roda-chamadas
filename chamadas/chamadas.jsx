@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import ThemeWheel from "../carrossel/ThemeWheel";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import Identity from "./Identity";
+import Instalar from "./Instalar";
 import IncomingCall from "./IncomingCall";
 import CallScreen from "./CallScreen";
 import ChatPanel from "./ChatPanel";
@@ -12,6 +13,7 @@ import { CallSession } from "./calls";
 import { createRealtime } from "./realtime";
 import { readPosition } from "./geo";
 import { IS_NATIVE } from "./plataforma";
+import { PRECISA_INSTALAR } from "./instalacao";
 import { THEMES, themeById } from "../carrossel/themes";
 import { STATUS_LABEL } from "./status";
 import {
@@ -81,6 +83,11 @@ const REASON_TEXT = {
 };
 
 function CallsApp() {
+  /* No iPhone, a app pede primeiro para ser instalada no ecrã principal. */
+  const [instalando, setInstalando] = useState(
+    () => PRECISA_INSTALAR && !sessionStorage.getItem("roda:safari")
+  );
+
   /* A conta é o herói desta aba: recarregar a página não derruba ninguém. */
   const [identity, setIdentity] = useState(() => {
     const hero = sessionStorage.getItem("roda:hero");
@@ -650,6 +657,17 @@ function CallsApp() {
   };
 
   /* ---------- telas ---------- */
+
+  if (instalando) {
+    return (
+      <Instalar
+        onContinuar={() => {
+          sessionStorage.setItem("roda:safari", "1");
+          setInstalando(false);
+        }}
+      />
+    );
+  }
 
   if (!identity) {
     return <Identity onEnter={enter} notice={error} />;

@@ -1,0 +1,83 @@
+/* ---------- instalação no iPhone ---------- */
+
+.instalacao {
+  gap: 22px;
+}
+
+.instalacao__passos {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.instalacao__passo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.instalacao__numero {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--accent-base) 22%, transparent);
+  color: var(--accent100);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.instalacao__passo p {
+  margin: 0;
+  color: var(--accent60);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.instalacao__passo strong {
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.instalacao__glyph {
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  vertical-align: -3px;
+  color: var(--accent100);
+}
+
+.instalacao__acoes {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.instalacao__btn {
+  padding: 12px 20px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--overlay);
+  color: var(--accent100);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.instalacao__btn:hover {
+  border-color: var(--accent80);
+}
+
+.instalacao__btn:focus-visible {
+  outline: 2px solid var(--accent80);
+  outline-offset: 2px;
+}
