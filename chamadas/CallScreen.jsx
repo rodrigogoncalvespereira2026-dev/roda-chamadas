@@ -14,6 +14,20 @@ function formatTime(seconds) {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
+/*
+  Um pedaço de vídeo da chamada.
+
+  No Safari do iPhone há três armadilhas que deixam a imagem preta sem erro
+  nenhum, e nenhuma delas aparece no Chrome:
+    1. o play() é ignorado até haver um toque na página, e um stream com áudio
+       não começa sozinho como os mudos;
+    2. uma faixa que entra depois no mesmo MediaStream (a câmera ligada no meio
+       da chamada) não aparece até o srcObject ser posto outra vez;
+    3. o atributo playsinline precisa de estar no elemento antes do primeiro
+       play, ou o vídeo abre sozinho em ecrã inteiro.
+  Por isso o elemento é montado à mão no efeito, e cada um dos três casos tem
+  o seu remédio aqui.
+*/
 function Stream({ stream, muted, className }) {
   const ref = useRef(null);
 
@@ -21,15 +35,47 @@ function Stream({ stream, muted, className }) {
     const node = ref.current;
     if (!node) return undefined;
 
-    node.srcObject = stream ?? null;
+    node.setAttribute("playsinline", "");
+    node.setAttribute("webkit-playsinline", "");
+    node.muted = Boolean(muted);
 
-    // autoPlay nem sempre basta quando a faixa chega depois do elemento
-    if (stream) node.play?.().catch(() => {});
+    const ligar = (reconstruir) => {
+      if (!stream) return;
+
+      // No Safari uma faixa nova no mesmo stream não é desenhada: é preciso
+      // entregar ao elemento um stream novo, montado com as faixas de agora.
+      node.srcObject = reconstruir ? new MediaStream(stream.getTracks()) : stream;
+      node.play?.().catch(() => {
+        /* barrado pela política do iOS: o próximo toque tenta outra vez */
+      });
+    };
+
+    const tentarDeNovo = () => {
+      if (node.paused) node.play?.().catch(() => {});
+    };
+
+    ligar(false);
+
+    node.addEventListener("loadedmetadata", tentarDeNovo);
+    node.addEventListener("canplay", tentarDeNovo);
+
+    // faixa que chega depois (câmera ligada a meio, ou o vídeo depois do áudio)
+    const faixaNova = () => ligar(true);
+    stream?.addEventListener?.("addtrack", faixaNova);
+
+    // um toque em qualquer sítio da chamada libera o que o iOS barrou
+    document.addEventListener("pointerdown", tentarDeNovo);
+    document.addEventListener("touchend", tentarDeNovo);
 
     return () => {
+      node.removeEventListener("loadedmetadata", tentarDeNovo);
+      node.removeEventListener("canplay", tentarDeNovo);
+      stream?.removeEventListener?.("addtrack", faixaNova);
+      document.removeEventListener("pointerdown", tentarDeNovo);
+      document.removeEventListener("touchend", tentarDeNovo);
       node.srcObject = null;
     };
-  }, [stream]);
+  }, [stream, muted]);
 
   return <video ref={ref} className={className} autoPlay playsInline muted={muted} />;
 }
