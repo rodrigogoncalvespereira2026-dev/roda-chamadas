@@ -1,10 +1,8 @@
 {
-  "versao": "1.2",
-  "codigo": 3,
+  "versao": "1.3",
+  "codigo": 4,
   "novidades": [
-    "Botão Trocar, para passar à câmera de trás a meio da chamada",
-    "Aviso de câmera sem imagem, com botão para a reiniciar",
-    "Botão Ver nos vídeos que o sistema deixou parados",
-    "Este aviso de versão nova"
+    "O aviso de versão nova passa a dizer o que mudou",
+    "Até três novidades por versão, escritas em apk/novidades.json"
   ]
 }

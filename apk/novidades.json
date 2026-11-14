@@ -1,4 +1,8 @@
 {
+  "4": [
+    "O aviso de versão nova passa a dizer o que mudou",
+    "Até três novidades por versão, escritas em apk/novidades.json"
+  ],
   "3": [
     "Botão Trocar, para passar à câmera de trás a meio da chamada",
     "Aviso de câmera sem imagem, com botão para a reiniciar",
