@@ -9,6 +9,14 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    // no dev o Node da sinalização roda à parte (npm start com PORT=3001);
+    // o Vite empresta o mesmo endereço /ws para o navegador.
+    proxy: {
+      "/ws": {
+        target: "ws://localhost:3001",
+        ws: true,
+      },
+    },
   },
   build: {
     rollupOptions: {

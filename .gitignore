@@ -1,4 +1,6 @@
 node_modules
 dist
+# contas de quem usa o comunicador (criadas em tempo de execução)
+data
 .dev-server.log
 .preview-server.log

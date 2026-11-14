@@ -487,11 +487,18 @@ export default function ThemeWheel({
               role="option"
               aria-selected={isSelected}
               data-picked={isSelected ? "true" : undefined}
-              aria-label={`${theme.name} · ${label}`}
+              data-status={theme.status}
+              aria-label={`${theme.name}${theme.statusLabel ? ` · ${theme.statusLabel}` : ""} · ${label}`}
               title={theme.name}
               onClick={() => handleSelect(index)}
             >
-              <ThemeIcon id={theme.id} />
+              <ThemeIcon id={theme.icon ?? theme.id} />
+
+              {theme.unread ? (
+                <span className="theme-wheel__badge" aria-hidden="true">
+                  {theme.unread > 9 ? "9+" : theme.unread}
+                </span>
+              ) : null}
             </button>
           );
         })}

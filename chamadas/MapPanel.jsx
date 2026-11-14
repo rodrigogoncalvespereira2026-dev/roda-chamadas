@@ -1,171 +1,83 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import ThemeIcon from "../carrossel/ThemeIcon";
-import { THEMES } from "../carrossel/themes";
+import { themeById } from "../carrossel/themes";
+import { distanceKm, formatKm, mapsLink } from "./geo";
+import { PinIcon, TargetIcon } from "./icons";
+import { statusLabel } from "./status";
 
 /**
- * Mapa do comunicador.
+ * Mapa do time.
  *
- * O centro é você. Os heróis têm uma posição simulada (estável por id, medida
- * a partir de você), porque são personagens — não há GPS do outro lado. Sua
- * própria posição é real quando o navegador permite: o GPS do aparelho é lido
- * aqui e fica só nesta aba, sem enviar nada para servidor nenhum.
+ * O centro é você (GPS do aparelho). Só aparece o contato que compartilhou a
+ * posição — no convite da chamada ou no alerta. Onde não há posição, a lista
+ * mostra o estado e diz que ninguém compartilhou nada. Nada disso vai para o
+ * servidor: o ponto viaja no alerta e fica só na memória das abas.
  */
 
-/** Quantos heróis aparecem quando nada está marcado. */
-const FALLBACK_COUNT = 6;
-/** Raio do mapa que corresponde a 3 km. */
-const MAP_RADIUS = 42;
+/** Distância (km) que cabe da borda ao centro do mapa. */
+const MAP_RADIUS_KM = 3;
 
-const DIRS = [
-  "Leste",
-  "Sudeste",
-  "Sul",
-  "Sudoeste",
-  "Oeste",
-  "Noroeste",
-  "Norte",
-  "Nordeste",
-];
+export default function MapPanel({
+  people,
+  places = {},
+  myPlace,
+  onLocate,
+  locating,
+  geoError,
+  onFocus,
+}) {
+  const contacts = people.filter((person) => person.contact);
 
-const GEO_ERRORS = {
-  1: "Permissão de localização negada. Libere o acesso nas configurações do navegador para ver onde você está.",
-  2: "O aparelho não conseguiu calcular a posição agora.",
-  3: "A localização demorou demais para responder. Tente de novo.",
-};
+  const entries = useMemo(() => {
+    return contacts
+      .map((person) => {
+        const place = places[person.name] ?? null;
+        const km = place && myPlace ? distanceKm(myPlace, place) : null;
 
-function seedOf(id) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i += 1) {
-    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-}
+        let x = null;
+        let y = null;
 
-/** Ângulo e distância fixos por herói — o mesmo pin sempre no mesmo lugar. */
-function pinFor(id) {
-  const seed = seedOf(id);
-  const angle = ((seed % 360) * Math.PI) / 180;
-  const distance = 0.35 + ((seed >>> 9) % 265) / 100;
-  const ratio = distance / 3;
+        if (place && myPlace) {
+          const north = (place.lat - myPlace.lat) * 110.574;
+          const east =
+            (place.lng - myPlace.lng) * 111.32 * Math.cos((myPlace.lat * Math.PI) / 180);
+          const ratio = 42 / MAP_RADIUS_KM;
 
-  return {
-    angle,
-    distance,
-    direction: DIRS[Math.round(angle / (Math.PI / 4)) % 8],
-    x: Math.cos(angle) * ratio * MAP_RADIUS,
-    y: Math.sin(angle) * ratio * MAP_RADIUS,
-  };
-}
+          x = Math.max(6, Math.min(94, 50 + east * ratio));
+          y = Math.max(6, Math.min(94, 50 - north * ratio));
+        }
 
-function formatDistance(km) {
-  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1).replace(".", ",")} km`;
-}
+        return { person, place, km, x, y };
+      })
+      .sort((a, b) => (a.km == null ? 1 : 0) - (b.km == null ? 1 : 0) || (a.km ?? 0) - (b.km ?? 0));
+  }, [contacts, places, myPlace]);
 
-/** Lê a posição do aparelho quando o usuário permite. */
-function useMyPosition() {
-  const [state, setState] = useState({ status: "idle", coords: null, error: "" });
-
-  const request = useCallback(() => {
-    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
-      setState({ status: "unsupported", coords: null, error: "" });
-      return;
-    }
-
-    setState((current) => ({ ...current, status: "loading", error: "" }));
-
-    navigator.geolocation.getCurrentPosition(
-      (result) => {
-        setState({
-          status: "ready",
-          coords: {
-            lat: result.coords.latitude,
-            lng: result.coords.longitude,
-            accuracy: result.coords.accuracy,
-          },
-          error: "",
-        });
-      },
-      (error) => {
-        setState({
-          status: "error",
-          coords: null,
-          error: GEO_ERRORS[error.code] ?? "Não foi possível ler a localização do aparelho.",
-        });
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-    );
-  }, []);
-
-  return { ...state, request };
-}
-
-function locateLabel(state) {
-  if (state.status === "loading") return "Lendo o GPS do aparelho…";
-  if (state.status === "ready" && state.coords) {
-    return `Sua posição: ${state.coords.lat.toFixed(4)}, ${state.coords.lng.toFixed(
-      4
-    )} · precisão de ${Math.round(state.coords.accuracy)} m`;
-  }
-  if (state.status === "error") return state.error;
-  if (state.status === "unsupported") return "Este navegador não oferece localização.";
-  return "Sua posição ainda não foi liberada para o comunicador.";
-}
-
-export default function MapPanel({ selectedThemes = [], onToggle }) {
-  const myPosition = useMyPosition();
-  const askedRef = useRef(false);
-
-  // Abrir o mapa já pede a posição — o navegador mostra o pedido de permissão.
-  useEffect(() => {
-    if (askedRef.current) return;
-    askedRef.current = true;
-    myPosition.request();
-  }, [myPosition.request]);
-
-  /** O time inteiro fica no mapa; quem está marcado ganha destaque. */
-  const entries = useMemo(
-    () =>
-      THEMES.map((theme) => ({ theme, pin: pinFor(theme.id) })).sort(
-        (a, b) => a.pin.distance - b.pin.distance
-      ),
-    []
-  );
-
-  const usingSelection = selectedThemes.length > 0;
-
-  /** A lista mostra os marcados ou, sem marcação, os mais próximos de você. */
-  const listed = useMemo(() => {
-    if (!usingSelection) return entries.slice(0, FALLBACK_COUNT);
-    const picked = new Set(selectedThemes.map((theme) => theme.id));
-    return entries.filter(({ theme }) => picked.has(theme.id));
-  }, [entries, selectedThemes, usingSelection]);
+  const shared = entries.filter((entry) => entry.place);
+  const known = Boolean(myPlace);
 
   return (
     <>
       <div className="calls__listHead">
         <h2>Onde está o time</h2>
 
-        <button
-          type="button"
-          className="calls__teamBtn"
-          onClick={myPosition.request}
-          disabled={myPosition.status === "loading"}
-        >
+        <button type="button" className="calls__teamBtn" onClick={onLocate} disabled={locating}>
           <TargetIcon />
-          {myPosition.status === "ready" ? "Atualizar posição" : "Usar minha localização"}
+          {known ? "Atualizar posição" : "Usar minha localização"}
         </button>
       </div>
 
-      <p
-        className={`map__locate${myPosition.status === "error" ? " is-error" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        {locateLabel(myPosition)}
+      <p className={`map__locate${geoError ? " is-error" : ""}`} role="status" aria-live="polite">
+        {locating
+          ? "Lendo o GPS do aparelho…"
+          : geoError
+            ? geoError
+            : known
+              ? `Sua posição: ${myPlace.lat.toFixed(4)}, ${myPlace.lng.toFixed(4)}`
+              : "Sua posição ainda não foi liberada para o comunicador."}
       </p>
 
       <div className="mapWrap">
-        <div className="map" role="img" aria-label={`Mapa com os ${entries.length} heróis ao redor de você`}>
+        <div className="map" role="img" aria-label="Mapa dos contatos ao redor de você">
           <span className="map__ring" aria-hidden="true" />
           <span className="map__ring" aria-hidden="true" />
           <span className="map__ring" aria-hidden="true" />
@@ -175,90 +87,85 @@ export default function MapPanel({ selectedThemes = [], onToggle }) {
             você
           </span>
 
-          {entries.map(({ theme, pin }) => {
-            const picked = selectedThemes.some((item) => item.id === theme.id);
-            return (
-              <button
-                key={theme.id}
-                type="button"
-                className={`map__pin${picked ? " is-picked" : ""}`}
-                style={{
-                  "--accent-base": theme.accent,
-                  left: `calc(50% + ${pin.x.toFixed(2)}%)`,
-                  top: `calc(50% + ${pin.y.toFixed(2)}%)`,
-                }}
-                onClick={() => onToggle?.(theme)}
-                title={`${theme.name} · ${formatDistance(pin.distance)} a ${pin.direction.toLowerCase()}`}
-                aria-label={`${theme.name}, a ${formatDistance(pin.distance)} ${
-                  picked ? "· tirar do canal" : "· pôr no canal"
-                }`}
-                aria-pressed={picked}
-              >
-                <span className="map__pinIcon" aria-hidden="true">
-                  <ThemeIcon id={theme.id} />
-                </span>
-              </button>
-            );
-          })}
+          {known
+            ? entries
+                .filter((entry) => entry.x != null)
+                .map(({ person, x, y, km, place }) => (
+                  <a
+                    key={person.name}
+                    className="map__pin"
+                    style={{
+                      "--accent-base": themeById(person.hero).accent,
+                      left: `${x}%`,
+                      top: `${y}%`,
+                    }}
+                    href={mapsLink(place)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    title={`${person.name} · ${formatKm(km)}`}
+                    aria-label={`${person.name}, a ${formatKm(km)} de você`}
+                  >
+                    <span className="map__pinIcon" aria-hidden="true">
+                      <ThemeIcon id={person.hero} />
+                    </span>
+                  </a>
+                ))
+            : null}
         </div>
       </div>
 
       <p className="calls__hint">
-        O centro é você; os anéis só ajudam a ler a distância. Toque num herói para marcar ou
-        desmarcar.
+        {known
+          ? "Cada alfinete é um contato que compartilhou a posição no último alerta. Toque para abrir no mapa."
+          : "Libere sua localização para ver a distância até quem compartilhou."}
       </p>
 
       <div className="map__listHead">
-        <h2 className="calls__label">{usingSelection ? "No mapa" : "Mais perto de você"}</h2>
+        <h2 className="calls__label">Contatos</h2>
         <span className="calls__count">
-          {listed.length} herói{listed.length > 1 ? "s" : ""}
+          {shared.length} de {contacts.length} com posição
         </span>
       </div>
 
-      <ul className="map__list">
-        {listed.map(({ theme, pin }) => {
-          const picked = selectedThemes.some((item) => item.id === theme.id);
-          return (
-            <li key={theme.id}>
+      {entries.length ? (
+        <ul className="map__list">
+          {entries.map(({ person, place, km }) => (
+            <li key={person.name}>
               <button
                 type="button"
                 className="map__row"
-                style={{ "--accent-base": theme.accent }}
-                onClick={() => onToggle?.(theme)}
-                aria-pressed={picked}
+                style={{ "--accent-base": themeById(person.hero).accent }}
+                onClick={() => onFocus?.(person.name)}
               >
                 <span className="map__rowIcon" aria-hidden="true">
-                  <ThemeIcon id={theme.id} />
+                  <ThemeIcon id={person.hero} />
                 </span>
 
                 <span className="map__rowWho">
-                  <strong>{theme.name}</strong>
+                  <strong>{person.name}</strong>
                   <span>
-                    {theme.kwami ? `Kwami ${theme.kwami}` : "Sem kwami"} · {pin.direction}
+                    {place
+                      ? `posição de ${new Date(place.at ?? Date.now()).toLocaleTimeString("pt-BR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}`
+                      : "sem localização compartilhada"}
                   </span>
                 </span>
 
-                <span className="map__rowDistance">{formatDistance(pin.distance)}</span>
+                <span className="map__rowDistance">{km != null ? formatKm(km) : statusLabel(person.status)}</span>
               </button>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      ) : (
+        <p className="calls__empty">Nenhum contato na roda ainda.</p>
+      )}
 
       <p className="calls__hint">
-        As posições dos heróis são simuladas. A do seu aparelho é real, só aparece aqui e não é
-        enviada para nenhum servidor.
+        <PinIcon /> A posição do seu aparelho é lida na hora e fica só nesta aba. Quem recebe um
+        alerta vê a posição de quem ligou, e nada é guardado no servidor.
       </p>
     </>
-  );
-}
-
-function TargetIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-      <circle cx="12" cy="12" r="8" />
-      <circle cx="12" cy="12" r="2.5" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-    </svg>
   );
 }

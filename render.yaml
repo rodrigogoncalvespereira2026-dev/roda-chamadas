@@ -1,16 +1,12 @@
 services:
+  # Web Service (não static): o mesmo processo serve o dist/ e mantém o
+  # WebSocket de sinalização em /ws.
   - type: web
     name: roda-chamadas
-    runtime: static
+    runtime: node
+    plan: free
     buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
+    startCommand: node server.js
     envVars:
       - key: NODE_VERSION
         value: "20"
-    routes:
-      - type: rewrite
-        source: /chamadas/*
-        destination: /chamadas/index.html
-      - type: rewrite
-        source: /carrossel/*
-        destination: /carrossel/index.html
