@@ -137,7 +137,18 @@ function CallsApp() {
     myPlaceRef.current = myPlace;
   }, [myPlace]);
 
-  const roster = people.length ? people : offlineRoster();
+  /**
+   * A roda mantém SEMPRE a ordem original dos temas — o servidor manda o time
+   * com os online primeiro, mas aqui a lista volta a ser montada pelos THEMES
+   * e só o estado de cada um vem do servidor.
+   */
+  const roster = useMemo(() => {
+    const byHero = new Map(people.map((person) => [person.hero, person]));
+    return THEMES.map(
+      (theme) =>
+        byHero.get(theme.id) ?? { hero: theme.id, name: theme.name, status: "offline" }
+    );
+  }, [people]);
   /** O time: todos os heróis menos o meu (ninguém liga para si mesmo). */
   const others = roster.filter((person) => person.hero !== identity?.hero);
   const focus = roster.find((person) => person.hero === focusHero) ?? roster[0] ?? null;
