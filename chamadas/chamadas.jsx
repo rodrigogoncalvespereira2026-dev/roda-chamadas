@@ -11,8 +11,8 @@ import MapPanel from "./MapPanel";
 import { CallSession } from "./calls";
 import { createRealtime } from "./realtime";
 import { readPosition } from "./geo";
+import { THEMES, themeById } from "../carrossel/themes";
 import { STATUS_LABEL } from "./status";
-import { themeById } from "../carrossel/themes";
 import {
   CameraIcon,
   ChatTabIcon,
@@ -29,12 +29,15 @@ import "./chamadas.css";
 /**
  * Comunicador Miraculous.
  *
- * A roda escolhe com quem falar; o canal é uma chamada WebRTC de verdade
- * (voz ou vídeo), com o servidor de /ws cuidando de presença e sinalização.
- * Duas abas do navegador com nomes diferentes já conversam entre si.
+ * A roda é a original, com os vinte heróis sempre presentes. A cor do círculo
+ * diz o estado de quem está por trás dele — disponível, a tocar, em chamada ou
+ * offline — e o canal é uma chamada WebRTC de verdade (voz ou vídeo), com o
+ * servidor de /ws cuidando de presença e sinalização.
+ *
+ * A identidade é o herói: quem entra escolhe um, sem nome de pessoa nem senha.
  */
 
-/** Quantos contatos cabem numa chamada (o mesmo limite do servidor). */
+/** Quantos heróis cabem numa chamada (o mesmo limite do servidor). */
 const ROOM_SIZE = 6;
 /** Toque longo no círculo central chama todos. */
 const HOLD_MS = 550;
@@ -42,7 +45,7 @@ const HOLD_MS = 550;
 /**
  * Identidade da aba: sobrevive a recargas, mas é diferente em cada aba.
  * O servidor usa isso para saber que um reload é a mesma sessão (não é
- * "entrou em outro aparelho") e que duas abas são duas pessoas.
+ * "entrou em outro aparelho") e que duas abas são dois heróis.
  */
 const TAB_ID = (() => {
   let id = sessionStorage.getItem("roda:aba");
@@ -53,12 +56,8 @@ const TAB_ID = (() => {
   return id;
 })();
 
-const slugOf = (name) =>
-  `contato-${name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")}`;
+const offlineRoster = () =>
+  THEMES.map((theme) => ({ hero: theme.id, name: theme.name, status: "offline" }));
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -81,19 +80,18 @@ const REASON_TEXT = {
 };
 
 function CallsApp() {
-  /* A conta mora na aba: recarregar a página não derruba ninguém. */
+  /* A conta é o herói desta aba: recarregar a página não derruba ninguém. */
   const [identity, setIdentity] = useState(() => {
-    const name = sessionStorage.getItem("roda:nome");
     const hero = sessionStorage.getItem("roda:hero");
-    return name && hero ? { name, hero } : null;
+    return hero ? { hero } : null;
   });
   const [connection, setConnection] = useState("offline");
   const [me, setMe] = useState(null);
-  const [people, setPeople] = useState([]);
+  const [people, setPeople] = useState(() => offlineRoster());
   const [error, setError] = useState("");
 
   const [tab, setTab] = useState("roda");
-  const [focusName, setFocusName] = useState("");
+  const [focusHero, setFocusHero] = useState("");
   const [selectMode, setSelectMode] = useState(false);
   const [selection, setSelection] = useState([]);
   const [kind, setKind] = useState("video");
@@ -107,7 +105,7 @@ function CallsApp() {
 
   const [threads, setThreads] = useState({});
   const [unread, setUnread] = useState({});
-  const [chatName, setChatName] = useState(null);
+  const [chatHero, setChatHero] = useState(null);
 
   const [myPlace, setMyPlace] = useState(null);
   const [places, setPlaces] = useState({});
@@ -139,36 +137,34 @@ function CallsApp() {
     myPlaceRef.current = myPlace;
   }, [myPlace]);
 
-  const contacts = useMemo(() => people.filter((person) => person.contact), [people]);
-  const focus = contacts.find((person) => person.name === focusName) ?? contacts[0] ?? null;
-  const online = contacts.filter((person) => person.status !== "offline");
+  const roster = people.length ? people : offlineRoster();
+  /** O time: todos os heróis menos o meu (ninguém liga para si mesmo). */
+  const others = roster.filter((person) => person.hero !== identity?.hero);
+  const focus = roster.find((person) => person.hero === focusHero) ?? roster[0] ?? null;
+  const online = others.filter((person) => person.status !== "offline");
   const totalUnread = Object.values(unread).reduce((sum, count) => sum + count, 0);
 
   /* ---------- roda ---------- */
 
   const wheelThemes = useMemo(
     () =>
-      contacts.map((person) => ({
-        id: slugOf(person.name),
+      roster.map((person) => ({
+        id: person.hero,
         name: person.name,
-        icon: person.hero,
         accent: themeById(person.hero).accent,
         status: person.status,
         statusLabel: STATUS_LABEL[person.status],
-        unread: unread[person.name] ?? 0,
+        unread: unread[person.hero] ?? 0,
       })),
-    [contacts, unread]
+    [roster, unread]
   );
 
   useEffect(() => {
-    if (!contacts.length) {
-      if (focusName) setFocusName("");
-      return;
-    }
-    if (!contacts.some((person) => person.name === focusName)) setFocusName(contacts[0].name);
-  }, [contacts, focusName]);
+    if (!roster.length) return;
+    if (!roster.some((person) => person.hero === focusHero)) setFocusHero(roster[0].hero);
+  }, [roster, focusHero]);
 
-  /* ---------- avisos e mídia ---------- */
+  /* ---------- vibração e notificação ---------- */
 
   const vibrate = useCallback((pattern) => {
     try {
@@ -184,7 +180,10 @@ function CallsApp() {
 
     try {
       new Notification(`Chamada de ${invite.from.name}`, {
-        body: invite.kind === "video" ? "Videochamada no Roda de Chamadas" : "Chamada de voz no Roda de Chamadas",
+        body:
+          invite.kind === "video"
+            ? "Videochamada no Roda de Chamadas"
+            : "Chamada de voz no Roda de Chamadas",
         tag: invite.callId,
       });
     } catch {
@@ -194,31 +193,28 @@ function CallsApp() {
 
   /* ---------- sessão de chamada ---------- */
 
-  const openSession = useCallback(
-    ({ callId, kind: callKind, members }) => {
-      const self = identityRef.current;
+  const openSession = useCallback(({ callId, kind: callKind, members }) => {
+    const self = identityRef.current;
 
-      sessionRef.current?.close();
+    sessionRef.current?.close();
 
-      const session = new CallSession({
-        callId,
-        self: self.name,
-        kind: callKind,
-        iceServers: iceRef.current,
-        heroOf: (name) => peopleRef.current.find((person) => person.name === name)?.hero ?? "cat",
-        send: (type, payload) => rtRef.current.send(type, payload),
-        onChange: (snapshot) => setView(snapshot),
-      });
+    const session = new CallSession({
+      callId,
+      self: self.hero,
+      kind: callKind,
+      iceServers: iceRef.current,
+      heroOf: (hero) => hero,
+      send: (type, payload) => rtRef.current.send(type, payload),
+      onChange: (snapshot) => setView(snapshot),
+    });
 
-      sessionRef.current = session;
-      session.setMembers(members.map((member) => member.name));
-      session.start();
+    sessionRef.current = session;
+    session.setMembers(members.map((member) => member.hero));
+    session.start();
 
-      setView(session.snapshot());
-      return session;
-    },
-    []
-  );
+    setView(session.snapshot());
+    return session;
+  }, []);
 
   const closeSession = useCallback(() => {
     sessionRef.current?.close();
@@ -249,17 +245,17 @@ function CallsApp() {
 
   const startCall = useCallback(
     async (targets, callKind = kind) => {
-      const names = targets.filter(Boolean);
-      if (!names.length) {
-        setNotice("Escolha pelo menos um contato.");
+      const eu = identityRef.current?.hero;
+      const heroes = targets.filter((hero) => Boolean(hero) && hero !== eu);
+      if (!heroes.length) {
+        setNotice("Escolha pelo menos um herói do time para chamar.");
         return;
       }
 
       setNotice("");
-      setError("");
 
       const place = await getPlace();
-      rtRef.current.send("call", { targets: names, kind: callKind, place });
+      rtRef.current.send("call", { targets: heroes, kind: callKind, place });
     },
     [getPlace, kind]
   );
@@ -275,7 +271,9 @@ function CallsApp() {
     (invite) => {
       rtRef.current.send("accept", { callId: invite.callId });
       setIncoming((current) => current.filter((item) => item.callId !== invite.callId));
-      if (invite.place) setPlaces((current) => ({ ...current, [invite.from.name]: invite.place }));
+      if (invite.place) {
+        setPlaces((current) => ({ ...current, [invite.from.hero]: invite.place }));
+      }
       vibrate(0);
     },
     [vibrate]
@@ -292,24 +290,24 @@ function CallsApp() {
 
   /* ---------- recados ---------- */
 
-  const appendMessage = useCallback((name, message) => {
+  const appendMessage = useCallback((hero, message) => {
     setThreads((current) => {
-      const list = current[name] ?? [];
+      const list = current[hero] ?? [];
       if (list.some((item) => item.at === message.at && item.text === message.text && item.mine === message.mine)) {
         return current;
       }
-      return { ...current, [name]: [...list, message] };
+      return { ...current, [hero]: [...list, message] };
     });
   }, []);
 
-  const openChat = useCallback((name) => {
-    setChatName(name);
-    setUnread((current) => ({ ...current, [name]: 0 }));
+  const openChat = useCallback((hero) => {
+    setChatHero(hero);
+    setUnread((current) => ({ ...current, [hero]: 0 }));
     setTab("recados");
   }, []);
 
-  const sendMessage = useCallback((name, text) => {
-    rtRef.current.send("message", { to: name, text });
+  const sendMessage = useCallback((hero, text) => {
+    rtRef.current.send("message", { to: hero, text });
   }, []);
 
   /* ---------- presença e eventos do servidor ---------- */
@@ -320,11 +318,7 @@ function CallsApp() {
 
     const join = () => {
       if (identityRef.current) {
-        rt.send("join", {
-          name: identityRef.current.name,
-          hero: identityRef.current.hero,
-          tab: TAB_ID,
-        });
+        rt.send("join", { hero: identityRef.current.hero, tab: TAB_ID });
       }
     };
 
@@ -379,7 +373,7 @@ function CallsApp() {
           current.some((item) => item.callId === data.callId) ? current : [...current, data]
         );
         if (data.place) {
-          setPlaces((current) => ({ ...current, [data.from.name]: data.place }));
+          setPlaces((current) => ({ ...current, [data.from.hero]: data.place }));
         }
         vibrate([320, 180, 320, 180, 320]);
         notify(data);
@@ -404,7 +398,7 @@ function CallsApp() {
             : previous
         );
 
-        sessionRef.current?.setMembers(members.map((member) => member.name));
+        sessionRef.current?.setMembers(members.map((member) => member.hero));
       })
     );
 
@@ -422,7 +416,7 @@ function CallsApp() {
         setTab("canal");
 
         if (data.place) {
-          setPlaces((current) => ({ ...current, [data.from.name]: data.place }));
+          setPlaces((current) => ({ ...current, [data.from.hero]: data.place }));
         }
       })
     );
@@ -455,14 +449,14 @@ function CallsApp() {
 
     offs.push(
       rt.on("signal", ({ from, data }) => {
-        sessionRef.current?.handleSignal(from.name, data);
+        sessionRef.current?.handleSignal(from.hero, data);
       })
     );
 
     offs.push(
       rt.on("message", ({ from, text, at }) => {
-        appendMessage(from.name, { text, at, mine: false });
-        setUnread((current) => ({ ...current, [from.name]: (current[from.name] ?? 0) + 1 }));
+        appendMessage(from.hero, { text, at, mine: false });
+        setUnread((current) => ({ ...current, [from.hero]: (current[from.hero] ?? 0) + 1 }));
       })
     );
 
@@ -476,13 +470,13 @@ function CallsApp() {
 
     offs.push(
       rt.on("kicked", ({ message }) => {
-        sessionStorage.removeItem("roda:nome");
+        sessionStorage.removeItem("roda:hero");
         setIdentity(null);
         setMe(null);
-        setPeople([]);
+        setPeople(offlineRoster());
         closeSession();
         setCall(null);
-        setError(message ?? "Você entrou em outra aba.");
+        setError(message ?? "Este herói entrou em outra aba.");
         rt.disconnect();
       })
     );
@@ -497,23 +491,19 @@ function CallsApp() {
 
   /* ---------- entrar ---------- */
 
-  const enter = useCallback(
-    ({ name, hero }) => {
-      setError("");
-      setIdentity({ name, hero });
-      rtRef.current.connect();
-      rtRef.current.send("join", { name, hero, tab: TAB_ID });
-    },
-    []
-  );
+  const enter = useCallback(({ hero }) => {
+    setError("");
+    setIdentity({ hero });
+    rtRef.current.connect();
+    rtRef.current.send("join", { hero, tab: TAB_ID });
+  }, []);
 
   const leave = useCallback(() => {
     if (callRef.current) endCall();
-    sessionStorage.removeItem("roda:nome");
     sessionStorage.removeItem("roda:hero");
     setIdentity(null);
     setMe(null);
-    setPeople([]);
+    setPeople(offlineRoster());
     setUnread({});
     setThreads({});
     rtRef.current.disconnect();
@@ -533,7 +523,7 @@ function CallsApp() {
     return () => clearInterval(timer);
   }, [call]);
 
-  /* ---------- chave de atalho ---------- */
+  /* ---------- atalho ---------- */
 
   useEffect(() => {
     if (!call) return undefined;
@@ -561,26 +551,33 @@ function CallsApp() {
 
   /* ---------- roda: marcar, ligar, chamar todos ---------- */
 
-  const toggleSelection = useCallback((name) => {
+  const toggleSelection = useCallback((hero) => {
+    if (hero === identityRef.current?.hero) return;
     setSelection((current) => {
-      if (current.includes(name)) return current.filter((item) => item !== name);
+      if (current.includes(hero)) return current.filter((item) => item !== hero);
       if (current.length >= ROOM_SIZE - 1) return current;
-      return [...current, name];
+      return [...current, hero];
     });
-    setFocusName(name);
+    setFocusHero(hero);
   }, []);
 
-  const onWheelSelect = useCallback((theme) => setFocusName(theme.name), []);
+  const onWheelSelect = useCallback((theme) => setFocusHero(theme.id), []);
 
   const onWheelActivate = useCallback(
     (theme) => {
-      setFocusName(theme.name);
-      startCall([theme.name], kind);
+      setFocusHero(theme.id);
+
+      if (theme.id === identityRef.current?.hero) {
+        setNotice("Este herói é você. Gire até outro círculo para ligar.");
+        return;
+      }
+
+      startCall([theme.id], kind);
     },
     [kind, startCall]
   );
 
-  const onWheelToggle = useCallback((theme) => toggleSelection(theme.name), [toggleSelection]);
+  const onWheelToggle = useCallback((theme) => toggleSelection(theme.id), [toggleSelection]);
 
   const holdRef = useRef(null);
   const holdStart = useRef(null);
@@ -595,7 +592,7 @@ function CallsApp() {
       clearTimeout(holdRef.current);
       holdRef.current = setTimeout(() => {
         holdRef.current = null;
-        if (online.length) setExclude(online.map((person) => person.name));
+        if (online.length) setExclude(online.map((person) => person.hero));
       }, HOLD_MS);
     },
     [online, selectMode]
@@ -617,9 +614,9 @@ function CallsApp() {
   }, []);
 
   const confirmCallAll = useCallback(() => {
-    const names = exclude ?? [];
+    const heroes = exclude ?? [];
     setExclude(null);
-    if (names.length) startCall(names, kind);
+    if (heroes.length) startCall(heroes, kind);
   }, [exclude, kind, startCall]);
 
   /* ---------- abas ---------- */
@@ -646,7 +643,7 @@ function CallsApp() {
     return <Identity onEnter={enter} notice={error} />;
   }
 
-  const accent = themeById(focus?.hero ?? me?.hero ?? "cat").accent;
+  const accent = themeById(focus?.hero ?? identity.hero).accent;
   const invite = incoming[0] ?? null;
   const callMembers = call?.members ?? [];
 
@@ -663,8 +660,8 @@ function CallsApp() {
         <p className="calls__eyebrow">Sistema Miraculous · {me ? "conectado" : connection}</p>
         <h1>Roda de Chamadas</h1>
         <p className="calls__sub">
-          Gire a roda, toque no círculo central para ligar e segure para chamar todo mundo. Quem
-          está disponível brilha em verde.
+          Gire a roda, toque no círculo central para ligar e segure para chamar todo o time. O
+          brilho de cada círculo mostra quem está disponível agora.
         </p>
 
         <div className="calls__me">
@@ -672,14 +669,18 @@ function CallsApp() {
             <ThemeIcon id={me?.hero ?? identity.hero} />
           </span>
           <span>
-            <strong>{me?.name ?? identity.name}</strong>
+            <strong>{me?.name ?? themeById(identity.hero).name}</strong>
             <span className={`statusDot is-${me?.status ?? "offline"}`}>
               {STATUS_LABEL[me?.status ?? "offline"]}
             </span>
           </span>
 
           <span className={`calls__link calls__link--${connection}`}>
-            {connection === "online" ? "servidor ligado" : connection === "connecting" ? "conectando…" : "sem servidor"}
+            {connection === "online"
+              ? "servidor ligado"
+              : connection === "connecting"
+                ? "conectando…"
+                : "sem servidor"}
           </span>
 
           <button type="button" className="calls__ghostBtn" onClick={leave}>
@@ -721,7 +722,7 @@ function CallsApp() {
         <section className="calls__panel" role="tabpanel" id="painel-roda" aria-labelledby="aba-roda" tabIndex={0}>
           <div className="calls__wheel">
             <div className="calls__wheelHead">
-              <h2 className="calls__label">Contatos na roda</h2>
+              <h2 className="calls__label">Heróis na roda</h2>
 
               <button
                 type="button"
@@ -744,22 +745,15 @@ function CallsApp() {
               onPointerLeave={endHold}
               onPointerCancel={endHold}
             >
-              {contacts.length ? (
-                <ThemeWheel
-                  themes={wheelThemes}
-                  selectedTheme={focus ? slugOf(focus.name) : undefined}
-                  selectedIds={selectMode ? selection.map(slugOf) : undefined}
-                  onSelect={onWheelSelect}
-                  onActivate={selectMode ? undefined : onWheelActivate}
-                  onToggle={selectMode ? onWheelToggle : undefined}
-                  label="Contatos"
-                />
-              ) : (
-                <p className="calls__empty">
-                  Sua roda está vazia. Vá em Contatos e traga alguém para cá — ou abra o site em
-                  outra aba com outro nome.
-                </p>
-              )}
+              <ThemeWheel
+                themes={wheelThemes}
+                selectedTheme={focus?.hero}
+                selectedIds={selectMode ? selection : undefined}
+                onSelect={onWheelSelect}
+                onActivate={selectMode ? undefined : onWheelActivate}
+                onToggle={selectMode ? onWheelToggle : undefined}
+                label="Heróis"
+              />
             </div>
 
             <ul className="statusLegend" aria-label="Cores de estado">
@@ -780,7 +774,7 @@ function CallsApp() {
             <p className="calls__hint">
               {selectMode
                 ? "Toque nos círculos para marcar quem entra na chamada."
-                : "Toque no círculo da frente para ligar. Segure para chamar todos os contatos online."}
+                : "Toque no círculo da frente para ligar. Segure para chamar todos os heróis online."}
             </p>
           </div>
 
@@ -820,29 +814,28 @@ function CallsApp() {
 
             {selection.length ? (
               <ul className="calls__picks">
-                {selection.map((name) => {
-                  const person = people.find((item) => item.name === name);
-                  return (
-                    <li key={name} style={{ "--accent-base": themeById(person?.hero ?? "cat").accent }}>
-                      <button
-                        type="button"
-                        className="calls__pick"
-                        onClick={() => toggleSelection(name)}
-                        title={`Tirar ${name} da chamada`}
-                      >
-                        <span className="calls__pickIcon" aria-hidden="true">
-                          <ThemeIcon id={person?.hero ?? "cat"} />
-                        </span>
-                        {name}
-                        <span className="calls__pickClose" aria-hidden="true">×</span>
-                      </button>
-                    </li>
-                  );
-                })}
+                {selection.map((hero) => (
+                  <li key={hero} style={{ "--accent-base": themeById(hero).accent }}>
+                    <button
+                      type="button"
+                      className="calls__pick"
+                      onClick={() => toggleSelection(hero)}
+                      title={`Tirar ${themeById(hero).name} da chamada`}
+                    >
+                      <span className="calls__pickIcon" aria-hidden="true">
+                        <ThemeIcon id={hero} />
+                      </span>
+                      {themeById(hero).name}
+                      <span className="calls__pickClose" aria-hidden="true">×</span>
+                    </button>
+                  </li>
+                ))}
               </ul>
             ) : (
               <p className="calls__picksEmpty">
-                {focus ? `Toque no círculo central para ligar para ${focus.name}.` : "Ninguém marcado."}
+                {focus
+                  ? `Toque no círculo central para ligar para ${focus.name}.`
+                  : "Ninguém marcado."}
               </p>
             )}
 
@@ -850,17 +843,21 @@ function CallsApp() {
               <button
                 type="button"
                 className="calls__callBtn"
-                onClick={() => (selection.length ? startCall(selection, kind) : focus && startCall([focus.name], kind))}
-                disabled={!focus || Boolean(call)}
+                onClick={() => (selection.length ? startCall(selection, kind) : focus && startCall([focus.hero], kind))}
+                disabled={!focus || focus.hero === identity.hero || Boolean(call)}
               >
                 <PhoneIcon />
-                {selection.length > 1 ? `Chamar ${selection.length}` : focus ? `Ligar para ${focus.name}` : "Ligar"}
+                {selection.length > 1
+                  ? `Chamar ${selection.length}`
+                  : focus
+                    ? `Ligar para ${focus.name}`
+                    : "Ligar"}
               </button>
 
               <button
                 type="button"
                 className="calls__teamBtn"
-                onClick={() => setExclude(online.map((person) => person.name))}
+                onClick={() => setExclude(online.map((person) => person.hero))}
                 disabled={!online.length || Boolean(call)}
               >
                 <UsersIcon />
@@ -875,9 +872,7 @@ function CallsApp() {
             ) : null}
 
             {me?.status && me.status !== "available" ? (
-              <p className="calls__hint">
-                Seu estado agora: {STATUS_LABEL[me.status]}.
-              </p>
+              <p className="calls__hint">Seu estado agora: {STATUS_LABEL[me.status]}.</p>
             ) : null}
           </div>
         </section>
@@ -886,16 +881,13 @@ function CallsApp() {
       {tab === "contatos" ? (
         <section className="calls__panel" role="tabpanel" id="painel-contatos" aria-labelledby="aba-contatos" tabIndex={0}>
           <ContactsPanel
-            people={people}
+            people={others}
             busy={Boolean(call)}
-            onFocus={(name) => {
-              setFocusName(name);
+            onFocus={(hero) => {
+              setFocusHero(hero);
               setTab("roda");
             }}
-            onToggleContact={(person) =>
-              rtRef.current.send("contact", { name: person.name, contact: !person.contact })
-            }
-            onCall={(name) => startCall([name], kind)}
+            onCall={(hero) => startCall([hero], kind)}
           />
         </section>
       ) : null}
@@ -903,10 +895,10 @@ function CallsApp() {
       {tab === "recados" ? (
         <section className="calls__panel" role="tabpanel" id="painel-recados" aria-labelledby="aba-recados" tabIndex={0}>
           <ChatPanel
-            people={people}
+            people={others}
             threads={threads}
             unread={unread}
-            chatName={chatName}
+            chatHero={chatHero}
             onOpen={openChat}
             onSend={sendMessage}
           />
@@ -941,13 +933,13 @@ function CallsApp() {
               <p>
                 {focus
                   ? `Na frente da roda: ${focus.name} (${STATUS_LABEL[focus.status]}).`
-                  : "Adicione contatos para abrir o canal."}
+                  : "Gire a roda para escolher quem chamar."}
               </p>
 
               <button
                 type="button"
                 className="calls__callBtn"
-                onClick={() => focus && startCall(selection.length ? selection : [focus.name], kind)}
+                onClick={() => focus && startCall(selection.length ? selection : [focus.hero], kind)}
                 disabled={!focus}
               >
                 <PhoneIcon />
@@ -972,14 +964,14 @@ function CallsApp() {
       {tab === "mapa" ? (
         <section className="calls__panel" role="tabpanel" id="painel-mapa" aria-labelledby="aba-mapa" tabIndex={0}>
           <MapPanel
-            people={people}
+            people={others}
             places={places}
             myPlace={myPlace}
             locating={locating}
             geoError={geoError}
             onLocate={locate}
-            onFocus={(name) => {
-              setFocusName(name);
+            onFocus={(hero) => {
+              setFocusHero(hero);
               setTab("roda");
             }}
           />
@@ -1001,21 +993,21 @@ function CallsApp() {
           <div className="modal__card">
             <h2>Chamar todos</h2>
             <p className="calls__hint">
-              Desmarque quem não deve ser incomodado. Só entram os contatos online.
+              Desmarque quem não deve ser incomodado. Só entram os heróis online.
             </p>
 
             <ul className="modal__list">
               {online.map((person) => (
-                <li key={person.name} style={{ "--accent-base": themeById(person.hero).accent }}>
+                <li key={person.hero} style={{ "--accent-base": themeById(person.hero).accent }}>
                   <label className="calls__check">
                     <input
                       type="checkbox"
-                      checked={exclude.includes(person.name)}
+                      checked={exclude.includes(person.hero)}
                       onChange={(event) =>
                         setExclude((current) =>
                           event.target.checked
-                            ? [...(current ?? []), person.name]
-                            : (current ?? []).filter((name) => name !== person.name)
+                            ? [...(current ?? []), person.hero]
+                            : (current ?? []).filter((hero) => hero !== person.hero)
                         )
                       }
                     />

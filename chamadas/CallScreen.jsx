@@ -43,8 +43,6 @@ const PEER_STATE = {
   closed: "saiu",
 };
 
-const memberNames = (members) => members.map((member) => member.name).join(", ");
-
 export default function CallScreen({
   call,
   peers = [],
@@ -95,7 +93,7 @@ export default function CallScreen({
             )}
 
             <span className="room__tag">
-              {peer.name}
+              {themeById(peer.hero).name}
               {!peer.hasVideo ? ` · ${PEER_STATE[peer.state] ?? "no canal"}` : ""}
             </span>
           </div>
@@ -104,11 +102,7 @@ export default function CallScreen({
         {!peers.length ? (
           <div className="room__wait">
             <span className="room__pulse" aria-hidden="true" />
-            <p>
-              {ringing
-                ? `A tocar para ${memberNames(call.members.filter((member) => member.name !== "você")) || "…"}`
-                : "Esperando o outro lado entrar no canal…"}
-            </p>
+            <p>{ringing ? "A tocar…" : "Esperando o outro lado entrar no canal…"}</p>
           </div>
         ) : null}
 

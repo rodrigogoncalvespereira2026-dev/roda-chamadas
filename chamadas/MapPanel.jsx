@@ -26,12 +26,10 @@ export default function MapPanel({
   geoError,
   onFocus,
 }) {
-  const contacts = people.filter((person) => person.contact);
-
   const entries = useMemo(() => {
-    return contacts
+    return people
       .map((person) => {
-        const place = places[person.name] ?? null;
+        const place = places[person.hero] ?? null;
         const km = place && myPlace ? distanceKm(myPlace, place) : null;
 
         let x = null;
@@ -50,7 +48,7 @@ export default function MapPanel({
         return { person, place, km, x, y };
       })
       .sort((a, b) => (a.km == null ? 1 : 0) - (b.km == null ? 1 : 0) || (a.km ?? 0) - (b.km ?? 0));
-  }, [contacts, places, myPlace]);
+  }, [people, places, myPlace]);
 
   const shared = entries.filter((entry) => entry.place);
   const known = Boolean(myPlace);
@@ -92,7 +90,7 @@ export default function MapPanel({
                 .filter((entry) => entry.x != null)
                 .map(({ person, x, y, km, place }) => (
                   <a
-                    key={person.name}
+                    key={person.hero}
                     className="map__pin"
                     style={{
                       "--accent-base": themeById(person.hero).accent,
@@ -123,19 +121,19 @@ export default function MapPanel({
       <div className="map__listHead">
         <h2 className="calls__label">Contatos</h2>
         <span className="calls__count">
-          {shared.length} de {contacts.length} com posição
+          {shared.length} de {people.length} com posição
         </span>
       </div>
 
       {entries.length ? (
         <ul className="map__list">
           {entries.map(({ person, place, km }) => (
-            <li key={person.name}>
+            <li key={person.hero}>
               <button
                 type="button"
                 className="map__row"
                 style={{ "--accent-base": themeById(person.hero).accent }}
-                onClick={() => onFocus?.(person.name)}
+                onClick={() => onFocus?.(person.hero)}
               >
                 <span className="map__rowIcon" aria-hidden="true">
                   <ThemeIcon id={person.hero} />
@@ -159,7 +157,7 @@ export default function MapPanel({
           ))}
         </ul>
       ) : (
-        <p className="calls__empty">Nenhum contato na roda ainda.</p>
+        <p className="calls__empty">Nenhum herói na roda.</p>
       )}
 
       <p className="calls__hint">

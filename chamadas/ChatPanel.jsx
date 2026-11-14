@@ -5,8 +5,8 @@ import { SendIcon } from "./icons";
 import { statusLabel } from "./status";
 
 /**
- * Recados: mensagens curtas por contato, dentro e fora da chamada.
- * O histórico vive na aba; o servidor guarda o que chega com a pessoa offline.
+ * Recados: mensagens curtas por herói, dentro e fora da chamada.
+ * O histórico vive na aba; o servidor guarda o que chega com o herói offline.
  */
 
 function formatAt(at) {
@@ -14,49 +14,40 @@ function formatAt(at) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function ChatPanel({ people, threads, unread, chatName, onOpen, onSend }) {
+export default function ChatPanel({ people, threads, unread, chatHero, onOpen, onSend }) {
   const [text, setText] = useState("");
   const endRef = useRef(null);
 
-  const contacts = people.filter((person) => person.contact);
-  const active = contacts.find((person) => person.name === chatName) ?? null;
-  const messages = active ? threads[active.name] ?? [] : [];
+  const active = people.find((person) => person.hero === chatHero) ?? null;
+  const messages = active ? threads[active.hero] ?? [] : [];
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages.length, active?.name]);
+  }, [messages.length, active?.hero]);
 
   const submit = (event) => {
     event.preventDefault();
     const clean = text.trim();
     if (!clean || !active) return;
-    onSend(active.name, clean);
+    onSend(active.hero, clean);
     setText("");
   };
-
-  if (!contacts.length) {
-    return (
-      <p className="calls__empty">
-        Nenhum contato na roda ainda. Adicione alguém na aba Contatos para trocar recados.
-      </p>
-    );
-  }
 
   return (
     <div className="chat">
       <div className="chat__list" role="list">
-        {contacts.map((person) => {
-          const count = unread[person.name] ?? 0;
+        {people.map((person) => {
+          const count = unread[person.hero] ?? 0;
 
           return (
             <button
-              key={person.name}
+              key={person.hero}
               type="button"
               role="listitem"
-              className={`chat__contact${active?.name === person.name ? " is-on" : ""}`}
+              className={`chat__contact${active?.hero === person.hero ? " is-on" : ""}`}
               style={{ "--accent-base": themeById(person.hero).accent }}
-              onClick={() => onOpen(person.name)}
-              aria-pressed={active?.name === person.name}
+              onClick={() => onOpen(person.hero)}
+              aria-pressed={active?.hero === person.hero}
             >
               <span className="chat__avatar" aria-hidden="true">
                 <ThemeIcon id={person.hero} />
@@ -91,10 +82,7 @@ export default function ChatPanel({ people, threads, unread, chatName, onOpen, o
             <ul className="chat__messages">
               {messages.length ? (
                 messages.map((item, index) => (
-                  <li
-                    key={`${item.at}-${index}`}
-                    className={`chat__msg${item.mine ? " is-mine" : ""}`}
-                  >
+                  <li key={`${item.at}-${index}`} className={`chat__msg${item.mine ? " is-mine" : ""}`}>
                     <p>{item.text}</p>
                     <span>{formatAt(item.at)}</span>
                   </li>
@@ -120,7 +108,7 @@ export default function ChatPanel({ people, threads, unread, chatName, onOpen, o
             </form>
           </>
         ) : (
-          <p className="calls__empty">Escolha um contato para ver os recados.</p>
+          <p className="calls__empty">Escolha um herói para ver os recados.</p>
         )}
       </div>
     </div>
