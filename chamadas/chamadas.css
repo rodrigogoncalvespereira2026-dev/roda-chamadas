@@ -2261,7 +2261,8 @@ body {
   }
 
   .room__self {
-    width: 34%;
+    width: 38%;
+    max-width: 150px;
   }
 
   .calls__link {
@@ -2271,14 +2272,54 @@ body {
   .gate__grid {
     grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
+
+  /* botões da chamada maiores e mais fáceis de tocar */
+  .call__actions {
+    gap: 10px;
+  }
+
+  .call__btn {
+    width: 74px;
+    font-size: 11px;
+  }
+
+  .call__btn svg {
+    width: 20px;
+    height: 20px;
+    padding: 13px;
+  }
+
+  .call__btn--end svg {
+    padding: 13px;
+  }
+
+  /* chamada a receber: botões lado a lado e maiores */
+  .ring__actions {
+    gap: 16px;
+  }
+
+  .ring__actions .call__btn {
+    width: 86px;
+  }
+
+  .ring__actions .call__btn svg {
+    width: 22px;
+    height: 22px;
+    padding: 14px;
+  }
 }
 
 @media (max-width: 520px) {
   .ring__actions .call__btn {
-    width: 72px;
+    width: 78px;
   }
 
   .calls__foot {
     font-size: 11px;
+  }
+
+  .room__self {
+    width: 44%;
+    max-width: 130px;
   }
 }
