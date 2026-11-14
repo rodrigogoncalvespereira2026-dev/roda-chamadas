@@ -9,7 +9,7 @@
   Uso: node scripts/icones.mjs
 */
 
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
 /** As cores de destaque dos heróis, na ordem da roda. */
@@ -130,4 +130,22 @@ await sharp(Buffer.from(svgFundo()))
 
 await sharp(Buffer.from(svgSplash())).png().toFile("assets/splash.png");
 
-console.log("ícones e ecrã de abertura gerados em assets/");
+/* ---------- site / PWA (é o que o iPhone usa ao pôr no ecrã principal) ---------- */
+
+function svgFavicon() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" rx="24" fill="#050b07" />
+    ${roda({ centro: 64, raio: 42, bolinha: 6.4, disco: 24, fone: true })}
+  </svg>`;
+}
+
+await mkdir("public/icons", { recursive: true });
+
+const chapado = sharp("assets/icon-only.png");
+await chapado.clone().resize(180, 180).png().toFile("public/icons/apple-touch-icon.png");
+await chapado.clone().resize(192, 192).png().toFile("public/icons/icon-192.png");
+await chapado.clone().resize(512, 512).png().toFile("public/icons/icon-512.png");
+await chapado.clone().resize(512, 512).png().toFile("public/icons/maskable-512.png");
+await writeFile("public/favicon.svg", svgFavicon());
+
+console.log("ícones, ecrã de abertura e favicon gerados");

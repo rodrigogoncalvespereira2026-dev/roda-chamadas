@@ -6,7 +6,7 @@ services:
     name: roda-chamadas
     runtime: node
     plan: free
-    buildCommand: npm ci
+    buildCommand: npm ci && npm run build
     startCommand: node server.js
     envVars:
       - key: NODE_VERSION

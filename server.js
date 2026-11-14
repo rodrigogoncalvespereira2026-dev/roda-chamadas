@@ -18,8 +18,8 @@
 
 import { createServer } from "node:http";
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile, stat } from "node:fs/promises";
+import { extname, join, resolve, sep } from "node:path";
 import { randomUUID } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { THEMES } from "./carrossel/themes.js";
@@ -174,6 +174,54 @@ const GONE = `<!doctype html>
   A Roda de Chamadas só funciona instalada. Baixe o APK para usar a app.
 </p>`;
 
+/**
+ * iPhone e iPad não instalam APK. Para eles o site serve a app, que fica no
+ * ecrã principal pelo Safari ("Adicionar ao Ecrã Principal"). O resto do mundo
+ * continua sem site: só o APK em /app.apk.
+ */
+const SITE = resolve(process.cwd(), "dist");
+
+const TIPOS = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
+};
+
+/** iPhone/iPad a pedir a app. */
+const ehAppleMovel = (agent) => /iPhone|iPad|iPod/i.test(agent);
+
+/** Caminho do dist que responde por `pathname`, ou null. */
+async function arquivoDoSite(pathname) {
+  let limpo;
+  try {
+    limpo = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+
+  const alvo = resolve(join(SITE, limpo));
+  if (alvo !== SITE && !alvo.startsWith(SITE + sep)) return null;
+
+  const tentativas = limpo.endsWith("/") ? [join(alvo, "index.html")] : [alvo, join(alvo, "index.html")];
+
+  for (const ficheiro of tentativas) {
+    try {
+      const info = await stat(ficheiro);
+      if (info.isFile()) return ficheiro;
+    } catch {
+      /* tenta o próximo */
+    }
+  }
+
+  return null;
+}
+
 const server = createServer(async (req, res) => {
   if (req.url === "/healthz") {
     res.writeHead(200, { "content-type": "application/json" });
@@ -211,6 +259,28 @@ const server = createServer(async (req, res) => {
       res.end("O APK ainda não foi gerado.");
       return;
     }
+  }
+
+  if (ehAppleMovel(req.headers["user-agent"] ?? "")) {
+    const ficheiro = await arquivoDoSite(url.pathname);
+
+    if (!ficheiro) {
+      res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
+      res.end(GONE);
+      return;
+    }
+
+    const corpo = await readFile(ficheiro);
+
+    res.writeHead(200, {
+      "content-type": TIPOS[extname(ficheiro).toLowerCase()] ?? "application/octet-stream",
+      "content-length": corpo.length,
+      "cache-control":
+        ficheiro.endsWith(".html") || ficheiro.endsWith("sw.js") ? "no-cache" : "public, max-age=3600",
+    });
+
+    res.end(req.method === "HEAD" ? undefined : corpo);
+    return;
   }
 
   res.writeHead(404, { "content-type": "text/html; charset=utf-8" });
