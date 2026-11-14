@@ -19,6 +19,9 @@ public class MainActivity extends BridgeActivity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    // precisa de vir antes do super: o bridge procura os plugins ao iniciar
+    registerPlugin(AtualizadorPlugin.class);
+
     super.onCreate(savedInstanceState);
     pedirPermissoes();
   }

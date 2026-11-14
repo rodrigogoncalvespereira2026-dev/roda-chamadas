@@ -1,8 +1,8 @@
 {
-  "versao": "1.3",
-  "codigo": 4,
+  "versao": "1.4",
+  "codigo": 5,
   "novidades": [
-    "O aviso de versão nova passa a dizer o que mudou",
-    "Até três novidades por versão, escritas em apk/novidades.json"
+    "A atualização passa a ser feita dentro da app: baixa e abre o instalador",
+    "Já não é preciso procurar o link para baixar a versão nova"
   ]
 }

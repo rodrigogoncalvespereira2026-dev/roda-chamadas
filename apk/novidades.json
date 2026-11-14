@@ -1,4 +1,8 @@
 {
+  "5": [
+    "A atualização passa a ser feita dentro da app: baixa e abre o instalador",
+    "Já não é preciso procurar o link para baixar a versão nova"
+  ],
   "4": [
     "O aviso de versão nova passa a dizer o que mudou",
     "Até três novidades por versão, escritas em apk/novidades.json"

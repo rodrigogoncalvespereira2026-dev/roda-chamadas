@@ -1,16 +1,35 @@
+import { useState } from "react";
 import { APK_URL } from "./versao";
+import { instalarNoAparelho } from "./atualizarApk";
 import "./atualizar.css";
 
 /**
  * Faixa de versão nova, só dentro do APK.
  *
- * O Android não atualiza a app sozinho: quando o servidor publica um instalador
- * mais recente, esta faixa aparece com o que mudou e o botão que abre o
- * download no navegador do sistema — é o navegador que instala, o Capacitor não
- * tem como fazer isso.
+ * O botão baixa o APK aqui mesmo e abre o instalador do Android, sem passar
+ * pelo navegador nem por procurar o link. Se o sistema recusar (por exemplo
+ * falta autorizar "instalar apps desconhecidas"), a mensagem explica e deixa o
+ * caminho antigo como último recurso.
  */
 export default function Atualizar({ versao, onFechar }) {
   const novidades = versao.novidades ?? [];
+  const [baixando, setBaixando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  const atualizar = async () => {
+    if (baixando) return;
+
+    setErro("");
+    setBaixando(true);
+
+    try {
+      await instalarNoAparelho(APK_URL);
+    } catch (falha) {
+      setErro(falha?.message ?? "Não consegui atualizar agora.");
+    } finally {
+      setBaixando(false);
+    }
+  };
 
   return (
     <aside className="atualizar" role="status">
@@ -26,11 +45,25 @@ export default function Atualizar({ versao, onFechar }) {
             ))}
           </ul>
         ) : null}
+
+        {erro ? (
+          <p className="atualizar__erro">
+            {erro}{" "}
+            <a href={APK_URL} target="_blank" rel="noreferrer">
+              baixar pelo navegador
+            </a>
+          </p>
+        ) : null}
       </div>
 
-      <a className="atualizar__link" href={APK_URL} target="_blank" rel="noreferrer">
-        Baixar
-      </a>
+      <button
+        type="button"
+        className="atualizar__link"
+        onClick={atualizar}
+        disabled={baixando}
+      >
+        {baixando ? "Baixando…" : "Atualizar"}
+      </button>
 
       <button
         type="button"
