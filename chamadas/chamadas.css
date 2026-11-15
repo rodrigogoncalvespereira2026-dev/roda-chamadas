@@ -944,10 +944,40 @@ body {
   color: #08120b;
 }
 
+/* atender e desligar: círculo com gradiente e o telefone branco por cima */
+.call__btn--answer svg,
 .call__btn--end svg {
-  border-color: color-mix(in oklch, var(--danger) 70%, transparent);
-  background: var(--danger);
+  border: 0;
   color: #fff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.call__btn--answer svg {
+  background: linear-gradient(135deg, #8ce02c 0%, #52b013 100%);
+  box-shadow: 0 4px 12px rgba(82, 176, 19, 0.3);
+}
+
+.call__btn--end svg {
+  background: linear-gradient(135deg, #ff4b4b 0%, #e01b24 100%);
+  box-shadow: 0 4px 12px rgba(224, 27, 36, 0.3);
+}
+
+.call__btn--answer svg path {
+  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.16));
+}
+
+.call__btn--end svg path {
+  filter: drop-shadow(-2px -3px 0 rgba(0, 0, 0, 0.16));
+}
+
+.call__btn--answer:hover svg,
+.call__btn--end:hover svg {
+  transform: scale(1.05);
+}
+
+.call__btn--answer:active svg,
+.call__btn--end:active svg {
+  transform: scale(0.95);
 }
 
 .call__btn:hover svg {
@@ -2165,10 +2195,15 @@ body {
   margin-top: 8px;
 }
 
-.call__btn--answer {
-  border-color: #35d07a;
-  background: #35d07a;
-  color: #08130b;
+.ring__actions .call__btn {
+  width: 92px;
+}
+
+.ring__actions .call__btn--answer svg,
+.ring__actions .call__btn--end svg {
+  width: 26px;
+  height: 26px;
+  padding: 16px;
 }
 
 /* ---------- quem entra na chamada a todos ---------- */
@@ -2303,8 +2338,8 @@ body {
   }
 
   .ring__actions .call__btn svg {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     padding: 14px;
   }
 }

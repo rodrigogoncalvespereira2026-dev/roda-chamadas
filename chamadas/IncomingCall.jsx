@@ -1,7 +1,7 @@
 import ThemeIcon from "../carrossel/ThemeIcon";
 import { themeById } from "../carrossel/themes";
 import { distanceKm, formatKm, mapsLink } from "./geo";
-import { PhoneIcon, PhoneOffIcon, PinIcon } from "./icons";
+import { PhoneCallIcon, PinIcon } from "./icons";
 
 /**
  * Ecrã de chamada a receber.
@@ -49,12 +49,12 @@ export default function IncomingCall({ invite, queued = 0, myPlace, onAccept, on
 
         <div className="ring__actions">
           <button type="button" className="call__btn call__btn--end" onClick={onReject}>
-            <PhoneOffIcon />
+            <PhoneCallIcon down />
             <span>Recusar</span>
           </button>
 
           <button type="button" className="call__btn call__btn--answer" onClick={onAccept} autoFocus>
-            <PhoneIcon />
+            <PhoneCallIcon />
             <span>Atender</span>
           </button>
         </div>

@@ -22,16 +22,16 @@ export function PhoneIcon(props) {
   );
 }
 
-export function PhoneOffIcon(props) {
+/**
+ * Telefone cheio, para os botões de atender e desligar.
+ * Com `down`, o auscultador roda 135° e fica pendurado — o gesto de desligar.
+ */
+export function PhoneCallIcon({ down = false, ...props }) {
   return (
-    <svg {...base} {...props}>
-      {/* auscultador pendurado (receiver down) — clássico de "encerrar":
-          faixa grossa curvada, com as duas pontas arredondadas viradas para baixo */}
-      <path
-        d="M3.6 15.2c0-4.6 3.7-6.7 8.4-6.7s8.4 2.1 8.4 6.7"
-        strokeWidth="4.2"
-        strokeLinecap="round"
-      />
+    <svg {...base} fill="currentColor" stroke="none" {...props}>
+      <g transform={down ? "rotate(135 12 12)" : undefined}>
+        <path d="M6.62 10.79a15.053 15.053 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.25 1.01l-2.2 2.2z" />
+      </g>
     </svg>
   );
 }

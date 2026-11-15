@@ -6,7 +6,7 @@ import {
   ChatTabIcon,
   FlipCameraIcon,
   MicIcon,
-  PhoneOffIcon,
+  PhoneCallIcon,
   PinIcon,
 } from "./icons";
 
@@ -244,7 +244,7 @@ tente
       <div className="call__actions">
         {ringing ? (
           <button type="button" className="call__btn call__btn--end" onClick={onEnd} autoFocus>
-            <PhoneOffIcon />
+            <PhoneCallIcon down />
             <span>Cancelar</span>
           </button>
         ) : (
@@ -293,7 +293,7 @@ tente
             </button>
 
             <button type="button" className="call__btn call__btn--end" onClick={onEnd} aria-label="Encerrar a chamada">
-              <PhoneOffIcon />
+              <PhoneCallIcon down />
               <span>Encerrar</span>
             </button>
           </>

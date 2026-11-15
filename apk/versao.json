@@ -1,7 +1,7 @@
 {
-  "versao": "1.9",
-  "codigo": 10,
+  "versao": "1.10",
+  "codigo": 11,
   "novidades": [
-    "Botão de encerrar chamada redesenhado, como auscultador pendurado"
+    "Novos botões de atender (verde) e desligar (vermelho), com gradiente"
   ]
 }
