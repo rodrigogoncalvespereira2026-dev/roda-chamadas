@@ -1395,6 +1395,169 @@ body {
   display: block;
 }
 
+.mapWrap {
+  position: relative;
+}
+
+/* procura de lugar, por cima do mapa */
+.map__busca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map__busca .calls__search {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.map__achado {
+  margin: 0;
+  color: var(--accent60);
+  font-size: 12px;
+}
+
+/* camadas (satélite / híbrido / ruas) */
+.map__bases {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 900;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.map__base {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.map__base[aria-pressed="true"] {
+  background: var(--accent100);
+  color: #071409;
+}
+
+/* ferramentas: centrar, régua, ecrã inteiro */
+.map__ferramentas {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map__ferramenta {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(10, 10, 10, 0.72);
+  color: var(--text-light);
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.map__ferramenta svg {
+  width: 18px;
+  height: 18px;
+}
+
+.map__ferramenta[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--accent100);
+  color: #071409;
+}
+
+/* régua: distância total marcada */
+.map__medida {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.82);
+  color: var(--text-light);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.map__medida button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent80);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ecrã inteiro */
+.mapWrap--cheio {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  padding: 8px;
+  background: rgba(5, 6, 5, 0.98);
+}
+
+body.mapaCheio {
+  overflow: hidden;
+}
+
+/* sem isto a animação do painel cria um contentor para o fixed */
+body.mapaCheio .calls__panel {
+  animation: none;
+  transform: none;
+  /* o painel também tem de ficar acima da barra de abas */
+  position: relative;
+  z-index: 70;
+}
+
+.mapWrap--cheio .map {
+  height: 100%;
+  border-radius: 14px;
+}
+
+.mapPin__busca {
+  display: block;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ffd166;
+  box-shadow: 0 0 0 6px rgba(255, 209, 102, 0.22);
+}
+
 .map {
   position: relative;
   width: 100%;

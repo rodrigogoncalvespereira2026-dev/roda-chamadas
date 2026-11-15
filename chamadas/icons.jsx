@@ -225,6 +225,34 @@ export function DownloadIcon(props) {
   );
 }
 
+/** Régua (medir distâncias). */
+export function RulerIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 15.5 15.5 3 21 8.5 8.5 21 3 15.5Z" />
+      <path d="M7 11.5l2 2M10 8.5l2 2M13 5.5l2 2" />
+    </svg>
+  );
+}
+
+/** Ecrã inteiro. */
+export function ExpandIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+    </svg>
+  );
+}
+
+/** Sair do ecrã inteiro. */
+export function ShrinkIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+    </svg>
+  );
+}
+
 /** Mão levantada. */
 export function HandIcon(props) {
   return (

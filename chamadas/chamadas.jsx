@@ -1091,10 +1091,6 @@ function CallsApp() {
             locating={locating}
             geoError={geoError}
             onLocate={locate}
-            onFocus={(hero) => {
-              setFocusHero(hero);
-              setTab("roda");
-            }}
           />
         </section>
       ) : null}

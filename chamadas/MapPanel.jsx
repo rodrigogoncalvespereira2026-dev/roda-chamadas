@@ -1,29 +1,42 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import { themeById } from "../carrossel/themes";
 import { distanceKm, formatKm } from "./geo";
-import { PinIcon, TargetIcon } from "./icons";
+import { ExpandIcon, PinIcon, RulerIcon, ShrinkIcon, TargetIcon } from "./icons";
 import { statusLabel } from "./status";
 
 /**
  * Mapa do time.
  *
- * O mapa é de satélite de verdade: imagens da Esri (World Imagery, que junta
- * Maxar e Earthstar) com os nomes dos lugares por cima, servidas como tiles
- * pelo Leaflet — nada de abrir o Google Maps. O centro é você (GPS do
- * aparelho). Só aparece o contato que compartilhou a posição — no convite da
- * chamada ou no alerta. Nada disso vai para o servidor: o ponto viaja no
- * alerta e fica só na memória das abas.
+ * Imagens de satélite da Esri (World Imagery, com Maxar e Earthstar) e ruas do
+ * OpenStreetMap, servidas como tiles pelo Leaflet — nada de abrir o Google
+ * Maps. O centro é você (GPS do aparelho). Só aparece o contato que
+ * compartilhou a posição — no convite da chamada ou no alerta. Nada disso vai
+ * para o servidor: o ponto viaja no alerta e fica só na memória das abas.
  */
 
 const SATELITE =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const ROTULOS =
   "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
-const ATRIBUICAO =
+const RUAS = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+const ATRIBUICAO_SATELITE =
   'Imagens &copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics';
+const ATRIBUICAO_RUAS =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+const BASES = {
+  satelite: { rotulo: "Satélite", camadas: () => [[SATELITE, ATRIBUICAO_SATELITE]] },
+  hibrido: {
+    rotulo: "Híbrido",
+    camadas: () =>
+      [([SATELITE, ATRIBUICAO_SATELITE]), ([ROTULOS, ATRIBUICAO_SATELITE])],
+  },
+  ruas: { rotulo: "Ruas", camadas: () => [[RUAS, ATRIBUICAO_RUAS]] },
+};
 
 /* sem GPS ainda, o mapa abre em Lisboa em vez de ficar cinzento */
 const CENTRO_PADRAO = [38.7223, -9.1393];
@@ -46,6 +59,13 @@ const ICONE_VOCE = L.divIcon({
   iconAnchor: [13, 13],
 });
 
+const ICONE_BUSCA = L.divIcon({
+  className: "mapPin mapPin--busca",
+  html: '<span class="mapPin__busca"></span>',
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+});
+
 export default function MapPanel({
   people,
   places = {},
@@ -53,11 +73,22 @@ export default function MapPanel({
   onLocate,
   locating,
   geoError,
-  onFocus,
 }) {
   const alvo = useRef(null);
   const mapa = useRef(null);
   const camada = useRef(null);
+  const baseCamadas = useRef([]);
+  const reguaCamada = useRef(null);
+  const buscaCamada = useRef(null);
+  const reguaLigada = useRef(false);
+
+  const [base, setBase] = useState("satelite");
+  const [regua, setRegua] = useState(false);
+  const [pontos, setPontos] = useState([]);
+  const [cheio, setCheio] = useState(false);
+  const [procurar, setProcurar] = useState("");
+  const [aProcurar, setAProcurar] = useState(false);
+  const [achado, setAchado] = useState("");
 
   const entries = useMemo(() => {
     return people
@@ -73,7 +104,21 @@ export default function MapPanel({
   const shared = entries.filter((entry) => entry.place);
   const known = Boolean(myPlace);
 
-  /* cria o mapa uma vez; os alfinetes são atualizados no efeito seguinte */
+  /* distância total marcada com a régua */
+  const medida = useMemo(() => {
+    let total = 0;
+
+    for (let i = 1; i < pontos.length; i += 1) {
+      total += distanceKm(
+        { lat: pontos[i - 1][0], lng: pontos[i - 1][1] },
+        { lat: pontos[i][0], lng: pontos[i][1] }
+      );
+    }
+
+    return total;
+  }, [pontos]);
+
+  /* cria o mapa uma vez; o resto é atualizado nos efeitos seguintes */
   useEffect(() => {
     if (!alvo.current || mapa.current) return;
 
@@ -81,14 +126,15 @@ export default function MapPanel({
       center: myPlace ? [myPlace.lat, myPlace.lng] : CENTRO_PADRAO,
       zoom: myPlace ? 15 : 12,
       zoomControl: false,
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
     });
 
-    L.tileLayer(SATELITE, { maxZoom: 19, attribution: ATRIBUICAO }).addTo(map);
-    L.tileLayer(ROTULOS, { maxZoom: 19, opacity: 0.85 }).addTo(map);
     L.control.zoom({ position: "bottomright" }).addTo(map);
+    L.control.scale({ position: "bottomleft", imperial: false, maxWidth: 90 }).addTo(map);
 
     camada.current = L.layerGroup().addTo(map);
+    reguaCamada.current = L.layerGroup().addTo(map);
+    buscaCamada.current = L.layerGroup().addTo(map);
     mapa.current = map;
 
     /* o painel pode aparecer já montado com altura 0: mede outra vez e volta
@@ -103,15 +149,28 @@ export default function MapPanel({
       map.remove();
       mapa.current = null;
       camada.current = null;
+      reguaCamada.current = null;
+      buscaCamada.current = null;
+      baseCamadas.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* alfinetes: você e quem compartilhou a posição */
+  /* camadas de base: satélite, híbrido ou ruas */
   useEffect(() => {
     const map = mapa.current;
+    if (!map) return;
+
+    baseCamadas.current.forEach((camadaBase) => map.removeLayer(camadaBase));
+    baseCamadas.current = BASES[base].camadas().map(([url, atribuicao]) =>
+      L.tileLayer(url, { maxZoom: 19, attribution: atribuicao }).addTo(map)
+    );
+  }, [base]);
+
+  /* alfinetes: você e quem compartilhou a posição */
+  useEffect(() => {
     const grupo = camada.current;
-    if (!map || !grupo) return;
+    if (!grupo) return;
 
     grupo.clearLayers();
 
@@ -134,15 +193,139 @@ export default function MapPanel({
     });
   }, [entries, myPlace]);
 
+  /* régua: cada toque no mapa marca um ponto */
+  useEffect(() => {
+    reguaLigada.current = regua;
+  }, [regua]);
+
+  useEffect(() => {
+    const map = mapa.current;
+    if (!map) return;
+
+    const aoClicar = (evento) => {
+      if (!reguaLigada.current) return;
+      setPontos((atuais) => [...atuais, [evento.latlng.lat, evento.latlng.lng]]);
+    };
+
+    map.on("click", aoClicar);
+    return () => map.off("click", aoClicar);
+  }, []);
+
+  useEffect(() => {
+    const grupo = reguaCamada.current;
+    if (!grupo) return;
+
+    grupo.clearLayers();
+    if (!pontos.length) return;
+
+    if (pontos.length > 1) {
+      L.polyline(pontos, { color: "#22ff44", weight: 3, dashArray: "7 7" }).addTo(grupo);
+    }
+
+    pontos.forEach((ponto, indice) => {
+      L.circleMarker(ponto, {
+        radius: 5,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: "#22ff44",
+        fillOpacity: 1,
+      })
+        .addTo(grupo)
+        .bindTooltip(String(indice + 1));
+    });
+  }, [pontos]);
+
   /* quando o GPS responde, o mapa vai para lá */
   useEffect(() => {
     if (!myPlace || !mapa.current) return;
 
-    mapa.current.setView(
-      [myPlace.lat, myPlace.lng],
-      Math.max(mapa.current.getZoom(), 14)
-    );
+    mapa.current.setView([myPlace.lat, myPlace.lng], Math.max(mapa.current.getZoom(), 14));
   }, [myPlace]);
+
+  /* ecrã inteiro: o Leaflet precisa de medir outra vez */
+  useEffect(() => {
+    const map = mapa.current;
+    if (!map) return;
+
+    /* o painel das abas é animado com transform, e um antepassado
+       transformado prende o position: fixed dentro dele — daí a classe no body */
+    document.body.classList.toggle("mapaCheio", cheio);
+
+    const medir = window.setTimeout(() => map.invalidateSize(), 220);
+    return () => {
+      window.clearTimeout(medir);
+      document.body.classList.remove("mapaCheio");
+    };
+  }, [cheio]);
+
+  const centrarEmMim = () => {
+    if (!mapa.current) return;
+
+    if (myPlace) {
+      mapa.current.setView([myPlace.lat, myPlace.lng], 16);
+      return;
+    }
+
+    onLocate?.();
+  };
+
+  /* procura de lugares (Photon, sobre os dados do OpenStreetMap) */
+  const buscar = async (evento) => {
+    evento.preventDefault();
+    const termo = procurar.trim();
+    if (!termo || aProcurar) return;
+
+    setAProcurar(true);
+    setAchado("A procurar…");
+
+    try {
+      const resposta = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(termo)}&limit=1`
+      );
+      if (!resposta.ok) throw new Error();
+
+      const dados = await resposta.json();
+      const primeiro = dados?.features?.[0];
+
+      if (!primeiro) {
+        setAchado(`Nada encontrado para “${termo}”.`);
+        return;
+      }
+
+      const [lng, lat] = primeiro.geometry.coordinates;
+      const nome =
+        primeiro.properties.name ?? primeiro.properties.city ?? primeiro.properties.street ?? termo;
+
+      mapa.current?.setView([lat, lng], 16);
+
+      buscaCamada.current?.clearLayers();
+      L.marker([lat, lng], { icon: ICONE_BUSCA })
+        .addTo(buscaCamada.current)
+        .bindPopup(`<strong>${nome}</strong>`)
+        .openPopup();
+
+      setAchado(nome);
+    } catch {
+      setAchado("Não consegui procurar agora. Verifique a ligação.");
+    } finally {
+      setAProcurar(false);
+    }
+  };
+
+  const alternarRegua = () => {
+    setRegua((ligada) => {
+      if (ligada) setPontos([]);
+      return !ligada;
+    });
+  };
+
+  /* tocar num contato da lista leva o mapa até ele */
+  const irPara = (person) => {
+    const place = places[person.hero];
+    if (place && mapa.current) {
+      mapa.current.setView([place.lat, place.lng], 16);
+    }
+  };
 
   return (
     <>
@@ -165,13 +348,93 @@ export default function MapPanel({
               : "Sua posição ainda não foi liberada para o comunicador."}
       </p>
 
-      <div className="mapWrap">
+      <form className="map__busca" onSubmit={buscar}>
+        <input
+          className="calls__search"
+          type="search"
+          value={procurar}
+          onChange={(evento) => setProcurar(evento.target.value)}
+          placeholder="Procurar rua, cidade ou lugar"
+          aria-label="Procurar lugar no mapa"
+        />
+        <button type="submit" className="calls__teamBtn" disabled={aProcurar || !procurar.trim()}>
+          {aProcurar ? "…" : "Ir"}
+        </button>
+      </form>
+
+      {achado ? (
+        <p className="map__achado" role="status" aria-live="polite">
+          {achado}
+        </p>
+      ) : null}
+
+      <div className={`mapWrap${cheio ? " mapWrap--cheio" : ""}`}>
         <div
           className="map"
           ref={alvo}
           role="application"
           aria-label="Mapa de satélite com você e os contatos que compartilharam a posição"
         />
+
+        <div className="map__bases" role="group" aria-label="Tipo de mapa">
+          {Object.entries(BASES).map(([id, opcao]) => (
+            <button
+              key={id}
+              type="button"
+              className="map__base"
+              aria-pressed={base === id}
+              onClick={() => setBase(id)}
+            >
+              {opcao.rotulo}
+            </button>
+          ))}
+        </div>
+
+        <div className="map__ferramentas">
+          <button
+            type="button"
+            className="map__ferramenta"
+            title={known ? "Centrar em mim" : "Usar a minha localização"}
+            aria-label={known ? "Centrar em mim" : "Usar a minha localização"}
+            onClick={centrarEmMim}
+          >
+            <TargetIcon />
+          </button>
+
+          <button
+            type="button"
+            className="map__ferramenta"
+            aria-pressed={regua}
+            title="Medir distância"
+            aria-label="Medir distância"
+            onClick={alternarRegua}
+          >
+            <RulerIcon />
+          </button>
+
+          <button
+            type="button"
+            className="map__ferramenta"
+            title={cheio ? "Sair do ecrã inteiro" : "Ecrã inteiro"}
+            aria-label={cheio ? "Sair do ecrã inteiro" : "Ecrã inteiro"}
+            onClick={() => setCheio((aberto) => !aberto)}
+          >
+            {cheio ? <ShrinkIcon /> : <ExpandIcon />}
+          </button>
+        </div>
+
+        {regua ? (
+          <div className="map__medida" role="status">
+            {pontos.length
+              ? `${formatKm(medida)} · ${pontos.length} ${pontos.length === 1 ? "ponto" : "pontos"}`
+              : "Toque no mapa para marcar os pontos."}
+            {pontos.length ? (
+              <button type="button" onClick={() => setPontos([])}>
+                limpar
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <p className="calls__hint">
@@ -195,7 +458,7 @@ export default function MapPanel({
                 type="button"
                 className="map__row"
                 style={{ "--accent-base": themeById(person.hero).accent }}
-                onClick={() => onFocus?.(person.hero)}
+                onClick={() => irPara(person)}
               >
                 <span className="map__rowIcon" aria-hidden="true">
                   <ThemeIcon id={person.hero} />
