@@ -184,6 +184,42 @@ export function ChatFillIcon(props) {
   );
 }
 
+/** Partilhar o ecrã. */
+export function ShareScreenIcon(props) {
+  return (
+    <svg {...base} fill="currentColor" stroke="none" {...props}>
+      <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6zm9 4.5v3.5h-2v-3.5H8.5L12 7l3.5 3.5H13z" />
+    </svg>
+  );
+}
+
+/** Mão levantada. */
+export function HandIcon(props) {
+  return (
+    <svg {...base} fill="currentColor" stroke="none" {...props}>
+      <path d="M21 7c0-1.38-1.12-2.5-2.5-2.5-.17 0-.34.02-.5.05V4c0-1.38-1.12-2.5-2.5-2.5-.23 0-.46.03-.67.09C14.46.66 13.56 0 12.5 0c-1.23 0-2.25.89-2.46 2.06-.17-.04-.35-.06-.54-.06C8.12 2 7 3.12 7 4.5v5.89c-.34-.31-.76-.54-1.22-.66L5.01 9.52c-.83-.23-1.7.09-2.19.83-.38.57-.4 1.31-.15 1.95l2.56 6.43C6.49 21.91 9.57 24 13 24h.5c4.14 0 7.5-3.36 7.5-7.5V7z" />
+    </svg>
+  );
+}
+
+/** Altifalante cheio. */
+export function SpeakerFillIcon(props) {
+  return (
+    <svg {...base} fill="currentColor" stroke="none" {...props}>
+      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+    </svg>
+  );
+}
+
+/** Efeitos de câmara (varinha e brilhos). */
+export function EffectsIcon(props) {
+  return (
+    <svg {...base} fill="currentColor" stroke="none" {...props}>
+      <path d="M7.5 5.6L10 7 8.6 4.5 10 2 7.5 3.4 5 2l1.4 2.5L5 7zm12 9.8L17 14l1.4 2.5L17 19l2.5-1.4L22 19l-1.4-2.5L22 14zM22 2l-2.5 1.4L17 2l1.4 2.5L17 7l2.5-1.4L22 7l-1.4-2.5zm-7.63 5.29a.996.996 0 0 0-1.41 0L1.29 18.96a.996.996 0 0 0 0 1.41l2.34 2.34c.39.39 1.02.39 1.41 0L16.7 11.05a.996.996 0 0 0 0-1.41l-2.33-2.35zm-1.03 5.49l-2.12-2.12 2.44-2.44 2.12 2.12-2.44 2.44z" />
+    </svg>
+  );
+}
+
 export function AddHeroIcon(props) {
   return (
     <svg {...base} {...props}>

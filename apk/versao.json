@@ -1,7 +1,7 @@
 {
-  "versao": "1.12",
-  "codigo": 13,
+  "versao": "1.13",
+  "codigo": 14,
   "novidades": [
-    "Botão de recados na chamada com balão cheio e aviso vermelho de mensagens"
+    "Barra da chamada com partilhar ecrã, levantar a mão, altifalante e efeitos"
   ]
 }

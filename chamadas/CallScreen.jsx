@@ -4,10 +4,14 @@ import { themeById } from "../carrossel/themes";
 import {
   CameraFillIcon,
   ChatFillIcon,
+  EffectsIcon,
   FlipCameraFillIcon,
+  HandIcon,
   MicFillIcon,
   PhoneCallIcon,
   PinIcon,
+  ShareScreenIcon,
+  SpeakerFillIcon,
 } from "./icons";
 
 /**
@@ -171,6 +175,9 @@ export default function CallScreen({
   const [larguraLocal, setLarguraLocal] = useState(null);
   /* Roda o ícone da câmera a cada toque em "Trocar". */
   const [girar, setGirar] = useState(false);
+  /* Botões extra da barra: mudam de estado no aparelho. */
+  const [extra, setExtra] = useState({ ecra: false, mao: false, altifalante: false, efeitos: false });
+  const alternarExtra = (chave) => setExtra((atual) => ({ ...atual, [chave]: !atual[chave] }));
   const status = ringing ? "Chamando…" : formatTime(elapsed);
 
   return (
@@ -295,6 +302,50 @@ tente
                 className={girar ? "spin" : undefined}
                 onAnimationEnd={() => setGirar(false)}
               />
+            </button>
+
+            <button
+              type="button"
+              className="call__btn call__btn--share"
+              aria-pressed={extra.ecra}
+              onClick={() => alternarExtra("ecra")}
+              aria-label="Partilhar o ecrã"
+              title="Partilhar ecrã"
+            >
+              <ShareScreenIcon />
+            </button>
+
+            <button
+              type="button"
+              className="call__btn call__btn--hand"
+              aria-pressed={extra.mao}
+              onClick={() => alternarExtra("mao")}
+              aria-label="Levantar a mão"
+              title="Levantar a mão"
+            >
+              <HandIcon />
+            </button>
+
+            <button
+              type="button"
+              className="call__btn call__btn--speaker"
+              aria-pressed={extra.altifalante}
+              onClick={() => alternarExtra("altifalante")}
+              aria-label="Altifalante"
+              title="Altifalante"
+            >
+              <SpeakerFillIcon />
+            </button>
+
+            <button
+              type="button"
+              className="call__btn call__btn--fx"
+              aria-pressed={extra.efeitos}
+              onClick={() => alternarExtra("efeitos")}
+              aria-label="Efeitos de câmara"
+              title="Efeitos de câmera"
+            >
+              <EffectsIcon />
             </button>
 
             <button
