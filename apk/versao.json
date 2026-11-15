@@ -1,8 +1,7 @@
 {
-  "versao": "1.8",
-  "codigo": 9,
+  "versao": "1.9",
+  "codigo": 10,
   "novidades": [
-    "Novo ícone no botão de encerrar chamada",
-    "Interface mais confortável no telemóvel"
+    "Botão de encerrar chamada redesenhado, como auscultador pendurado"
   ]
 }

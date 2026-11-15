@@ -25,12 +25,13 @@ export function PhoneIcon(props) {
 export function PhoneOffIcon(props) {
   return (
     <svg {...base} {...props}>
-      {/* auscultador pendurado (receiver down) — clássico de "encerrar" */}
-      <path d="M6 4 4 6" />
-      <path d="M18 4 20 6" />
-      <path d="M4 6c0 4 3 7 8 7s8-3 8-7" />
-      <path d="M4 6 2 9" />
-      <path d="M20 6 22 9" />
+      {/* auscultador pendurado (receiver down) — clássico de "encerrar":
+          faixa grossa curvada, com as duas pontas arredondadas viradas para baixo */}
+      <path
+        d="M3.6 15.2c0-4.6 3.7-6.7 8.4-6.7s8.4 2.1 8.4 6.7"
+        strokeWidth="4.2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
