@@ -3,7 +3,7 @@ import ThemeIcon from "../carrossel/ThemeIcon";
 import { themeById } from "../carrossel/themes";
 import {
   CameraFillIcon,
-  ChatTabIcon,
+  ChatFillIcon,
   FlipCameraFillIcon,
   MicFillIcon,
   PhoneCallIcon,
@@ -156,6 +156,7 @@ export default function CallScreen({
   ringing,
   elapsed,
   unread = 0,
+  chatOpen = false,
   onMute,
   onCamera,
   onFlip,
@@ -298,13 +299,14 @@ tente
 
             <button
               type="button"
-              className="call__btn"
+              className="call__btn call__btn--chat"
+              data-aberto={chatOpen ? "true" : undefined}
               onClick={onChat}
               aria-label={unread ? `Abrir os recados (${unread} por ler)` : "Abrir os recados"}
               title="Recados"
             >
-              <ChatTabIcon />
               {unread ? <i className="call__dot" aria-hidden="true" /> : null}
+              <ChatFillIcon />
             </button>
 
             <button
