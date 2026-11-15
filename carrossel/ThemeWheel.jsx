@@ -423,9 +423,13 @@ export default function ThemeWheel({
 
   const style = useMemo(() => {
     const measured = width > 0 ? width : 420;
-    const radius = clamp(measured * 0.38, 110, 160);
-    const itemSize = clamp(measured * 0.24, 60, 88);
-    const height = clamp(radius * 1.45, 140, 240);
+    /* No telemóvel a roda precisa de mais raio: com o cilindro apertado as
+       opções vizinhas encostavam umas às outras e ficava uma confusão. */
+    const radius = clamp(measured * 0.62, 120, 190);
+    const itemSize = clamp(measured * 0.22, 56, 84);
+    /* altura só o suficiente para o círculo maior: sem isto sobrava uma faixa
+       vazia em cima e outra em baixo da roda */
+    const height = clamp(itemSize + 34, 110, 200);
 
     return {
       "--wheel-radius": `${radius}px`,

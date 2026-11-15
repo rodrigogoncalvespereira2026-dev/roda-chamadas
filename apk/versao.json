@@ -1,7 +1,7 @@
 {
-  "versao": "1.14",
-  "codigo": 15,
+  "versao": "1.15",
+  "codigo": 16,
   "novidades": [
-    "No telemóvel: as abas já não cortam a página e a barra da chamada cabe em duas filas"
+    "Interface arrumada no telemóvel: abas que cabem, roda mais larga e contatos em lista"
   ]
 }
