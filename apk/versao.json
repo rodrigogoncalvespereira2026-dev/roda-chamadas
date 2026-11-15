@@ -1,7 +1,7 @@
 {
-  "versao": "1.10",
-  "codigo": 11,
+  "versao": "1.11",
+  "codigo": 12,
   "novidades": [
-    "Novos botões de atender (verde) e desligar (vermelho), com gradiente"
+    "Nova barra de controles na chamada: vídeo, microfone, trocar câmera e encerrar"
   ]
 }

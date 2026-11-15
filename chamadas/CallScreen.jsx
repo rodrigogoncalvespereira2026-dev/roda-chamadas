@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import { themeById } from "../carrossel/themes";
 import {
-  CameraIcon,
+  CameraFillIcon,
   ChatTabIcon,
-  FlipCameraIcon,
-  MicIcon,
+  FlipCameraFillIcon,
+  MicFillIcon,
   PhoneCallIcon,
   PinIcon,
 } from "./icons";
@@ -168,6 +168,8 @@ export default function CallScreen({
   const localVideo = Boolean(local?.getVideoTracks().some((track) => track.enabled));
   /* Largura do meu vídeo: 0 = a câmera deu faixa mas não está a enviar imagem. */
   const [larguraLocal, setLarguraLocal] = useState(null);
+  /* Roda o ícone da câmera a cada toque em "Trocar". */
+  const [girar, setGirar] = useState(false);
   const status = ringing ? "Chamando…" : formatTime(elapsed);
 
   return (
@@ -243,9 +245,15 @@ tente
 
       <div className="call__actions">
         {ringing ? (
-          <button type="button" className="call__btn call__btn--end" onClick={onEnd} autoFocus>
+          <button
+            type="button"
+            className="call__btn call__btn--end"
+            onClick={onEnd}
+            autoFocus
+            title="Cancelar a chamada"
+            aria-label="Cancelar a chamada"
+          >
             <PhoneCallIcon down />
-            <span>Cancelar</span>
           </button>
         ) : (
           <>
@@ -254,10 +262,10 @@ tente
               className="call__btn"
               aria-pressed={muted}
               aria-label={muted ? "Ativar microfone" : "Silenciar microfone"}
+              title={muted ? "Ativar microfone" : "Silenciar microfone"}
               onClick={onMute}
             >
-              <MicIcon muted={muted} />
-              <span>{muted ? "Sem áudio" : "Mudo"}</span>
+              <MicFillIcon muted={muted} />
             </button>
 
             <button
@@ -265,36 +273,58 @@ tente
               className="call__btn"
               aria-pressed={camera}
               aria-label={camera ? "Desligar câmera" : "Ligar câmera"}
+              title={camera ? "Desligar câmera" : "Ligar câmera"}
               onClick={onCamera}
             >
-              <CameraIcon on={camera} />
-              <span>{camera ? "Câmera" : "Câmera off"}</span>
+              <CameraFillIcon on={camera} />
             </button>
 
             <button
               type="button"
               className="call__btn"
-              onClick={onFlip}
+              onClick={() => {
+                setGirar(true);
+                onFlip();
+              }}
               disabled={!camera}
               aria-label="Trocar entre a câmera da frente e a de trás"
+              title="Trocar de câmera"
             >
-              <FlipCameraIcon />
-              <span>Trocar</span>
+              <FlipCameraFillIcon
+                className={girar ? "spin" : undefined}
+                onAnimationEnd={() => setGirar(false)}
+              />
             </button>
 
-            <button type="button" className="call__btn" onClick={onChat} aria-label="Abrir os recados">
+            <button
+              type="button"
+              className="call__btn"
+              onClick={onChat}
+              aria-label={unread ? `Abrir os recados (${unread} por ler)` : "Abrir os recados"}
+              title="Recados"
+            >
               <ChatTabIcon />
-              <span>Recados{unread ? ` (${unread})` : ""}</span>
+              {unread ? <i className="call__dot" aria-hidden="true" /> : null}
             </button>
 
-            <button type="button" className="call__btn" onClick={onMap} aria-label="Ver o time no mapa">
+            <button
+              type="button"
+              className="call__btn"
+              onClick={onMap}
+              aria-label="Ver o time no mapa"
+              title="Mapa"
+            >
               <PinIcon />
-              <span>Mapa</span>
             </button>
 
-            <button type="button" className="call__btn call__btn--end" onClick={onEnd} aria-label="Encerrar a chamada">
+            <button
+              type="button"
+              className="call__btn call__btn--end"
+              onClick={onEnd}
+              aria-label="Encerrar a chamada"
+              title="Encerrar"
+            >
               <PhoneCallIcon down />
-              <span>Encerrar</span>
             </button>
           </>
         )}

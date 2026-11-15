@@ -905,18 +905,21 @@ body {
 .call__actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
   margin-top: 22px;
+  padding: 13px 18px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
 }
 
 .call__btn {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 7px;
-  width: 78px;
+  justify-content: center;
   padding: 0;
   border: 0;
   background: transparent;
@@ -928,60 +931,45 @@ body {
 
 .call__btn svg {
   display: block;
-  width: 22px;
-  height: 22px;
-  padding: 15px;
+  width: 26px;
+  height: 26px;
+  padding: 17px;
   box-sizing: content-box;
-  border: 1px solid color-mix(in oklch, var(--accent-base) 30%, transparent);
   border-radius: 50%;
-  background: color-mix(in oklch, var(--accent-base) 12%, transparent);
-  color: var(--accent80);
-}
-
-.call__btn[aria-pressed="true"] svg {
-  border-color: var(--accent100);
-  background: var(--accent100);
-  color: #08120b;
-}
-
-/* atender e desligar: círculo com gradiente e o telefone branco por cima */
-.call__btn--answer svg,
-.call__btn--end svg {
-  border: 0;
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   color: #fff;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* desligado: o botão fica branco e o ícone escuro */
+.call__btn[aria-pressed="true"] svg {
+  background: #fff;
+  color: #1f2937;
+}
+
+/* atender e desligar: gradiente verde e vermelho */
 .call__btn--answer svg {
   background: linear-gradient(135deg, #8ce02c 0%, #52b013 100%);
-  box-shadow: 0 4px 12px rgba(82, 176, 19, 0.3);
+  box-shadow: 0 4px 12px rgba(82, 176, 19, 0.4);
 }
 
 .call__btn--end svg {
   background: linear-gradient(135deg, #ff4b4b 0%, #e01b24 100%);
-  box-shadow: 0 4px 12px rgba(224, 27, 36, 0.3);
+  box-shadow: 0 4px 12px rgba(224, 27, 36, 0.4);
 }
 
-.call__btn--answer svg path {
-  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.16));
-}
-
+.call__btn--answer svg path,
 .call__btn--end svg path {
-  filter: drop-shadow(-2px -3px 0 rgba(0, 0, 0, 0.16));
-}
-
-.call__btn--answer:hover svg,
-.call__btn--end:hover svg {
-  transform: scale(1.05);
-}
-
-.call__btn--answer:active svg,
-.call__btn--end:active svg {
-  transform: scale(0.95);
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.2));
 }
 
 .call__btn:hover svg {
-  border-color: var(--accent100);
+  transform: scale(1.08);
+}
+
+.call__btn:active svg {
+  transform: scale(0.95);
 }
 
 .call__btn:disabled {
@@ -990,11 +978,7 @@ body {
 }
 
 .call__btn:disabled:hover svg {
-  border-color: color-mix(in oklch, var(--accent-base) 30%, transparent);
-}
-
-.call__btn--end:hover svg {
-  border-color: #ff8590;
+  transform: none;
 }
 
 .call__btn:focus-visible {
@@ -1006,8 +990,40 @@ body {
   outline-offset: 3px;
 }
 
+/* a chamada a receber mostra o rótulo por baixo de cada botão */
+.ring__actions .call__btn {
+  flex-direction: column;
+  gap: 8px;
+}
+
 .call__btn span {
   color: var(--text-muted);
+}
+
+/* ponto de recados por ler, no canto do botão */
+.call__dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
+}
+
+/* girar o ícone ao trocar de câmera */
+@keyframes spin-icon {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+.call__btn svg.spin {
+  animation: spin-icon 0.4s ease;
 }
 
 .call__note {
@@ -2308,23 +2324,15 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
 
-  /* botões da chamada maiores e mais fáceis de tocar */
+  /* barra de controles da chamada */
   .call__actions {
     gap: 10px;
-  }
-
-  .call__btn {
-    width: 74px;
-    font-size: 11px;
+    padding: 10px 12px;
   }
 
   .call__btn svg {
-    width: 20px;
-    height: 20px;
-    padding: 13px;
-  }
-
-  .call__btn--end svg {
+    width: 22px;
+    height: 22px;
     padding: 13px;
   }
 
@@ -2335,6 +2343,7 @@ body {
 
   .ring__actions .call__btn {
     width: 86px;
+    font-size: 11px;
   }
 
   .ring__actions .call__btn svg {
@@ -2347,6 +2356,23 @@ body {
 @media (max-width: 520px) {
   .ring__actions .call__btn {
     width: 78px;
+  }
+
+  .ring__actions .call__btn svg {
+    width: 24px;
+    height: 24px;
+    padding: 14px;
+  }
+
+  .call__actions {
+    gap: 8px;
+    padding: 9px 10px;
+  }
+
+  .call__btn svg {
+    width: 20px;
+    height: 20px;
+    padding: 11px;
   }
 
   .calls__foot {
