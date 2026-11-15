@@ -105,6 +105,10 @@ function CallsApp() {
   const [error, setError] = useState("");
 
   const [tab, setTab] = useState("roda");
+  /* Botão das definições: fica aqui em cima, com os outros hooks, porque a
+     entrada (escolher o herói) sai antes por um return — um useState depois
+     desse return muda a ordem dos hooks e a app rebenta (React #310). */
+  const [definicoes, setDefinicoes] = useState(false);
   const [focusHero, setFocusHero] = useState("");
   const [selectMode, setSelectMode] = useState(false);
   const [selection, setSelection] = useState([]);
@@ -711,9 +715,6 @@ function CallsApp() {
     if (id === "canal") return call ? (call.phase === "ringing" ? "…" : String(callMembers.length)) : "";
     return "";
   };
-
-  /* Botão das definições no topo: por agora só muda de estado. */
-  const [definicoes, setDefinicoes] = useState(false);
 
   return (
     <main className={definicoes ? "calls calls--settings" : "calls"} style={{ "--accent-base": accent }}>

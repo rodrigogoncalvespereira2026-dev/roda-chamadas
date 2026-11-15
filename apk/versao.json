@@ -1,7 +1,7 @@
 {
-  "versao": "1.22",
-  "codigo": 23,
+  "versao": "1.23",
+  "codigo": 24,
   "novidades": [
-    "Mapa de satélite a sério, com os contatos por cima e zoom, sem sair da app"
+    "Corrigido o ecrã preto depois de escolher o herói"
   ]
 }
