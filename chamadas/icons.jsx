@@ -214,6 +214,17 @@ export function BackIcon(props) {
   );
 }
 
+/** Baixar / atualizar (seta para a linha). */
+export function DownloadIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3v12" />
+      <path d="M7 11l5 5 5-5" />
+      <path d="M4 20h16" />
+    </svg>
+  );
+}
+
 /** Mão levantada. */
 export function HandIcon(props) {
   return (

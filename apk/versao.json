@@ -1,7 +1,7 @@
 {
-  "versao": "1.23",
-  "codigo": 24,
+  "versao": "1.24",
+  "codigo": 25,
   "novidades": [
-    "Corrigido o ecrã preto depois de escolher o herói"
+    "Botão de atualizar no ecrã de escolha do herói"
   ]
 }

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import { THEMES, themeById } from "../carrossel/themes";
-import { PhoneIcon } from "./icons";
+import { DownloadIcon, PhoneIcon } from "./icons";
+import { IS_NATIVE } from "./plataforma";
+import { APK_URL, VERSAO_APP, versaoPublicada } from "./versao";
+import { instalarNoAparelho } from "./atualizarApk";
 
 /**
  * Porta de entrada: escolher o herói da vez.
@@ -12,6 +15,45 @@ import { PhoneIcon } from "./icons";
  */
 export default function Identity({ onEnter, notice }) {
   const [hero, setHero] = useState(() => sessionStorage.getItem("roda:hero") ?? "cat");
+  const [aAtualizar, setAAtualizar] = useState(false);
+  const [estado, setEstado] = useState("");
+
+  /* no APK baixa e instala a versão publicada; no iPhone recarrega a página,
+     que é como se recebe a build nova do site */
+  const atualizar = async () => {
+    if (aAtualizar) return;
+
+    setAAtualizar(true);
+    setEstado("A verificar…");
+
+    try {
+      const publicada = await versaoPublicada();
+
+      if (!publicada) {
+        setEstado(`Sem ligação ao servidor. Está na versão ${VERSAO_APP.nome}.`);
+        return;
+      }
+
+      if (!IS_NATIVE) {
+        setEstado(`A recarregar a versão ${publicada.versao}…`);
+        window.location.reload();
+        return;
+      }
+
+      if (publicada.codigo <= (VERSAO_APP.codigo ?? 0)) {
+        setEstado(`Já tem a ${VERSAO_APP.nome}, que é a mais recente.`);
+        return;
+      }
+
+      setEstado(`A instalar a ${publicada.versao}…`);
+      await instalarNoAparelho(APK_URL);
+      setEstado(`Versão ${publicada.versao} baixada. Confirme a instalação.`);
+    } catch (falha) {
+      setEstado(falha?.message ?? "Não consegui atualizar agora.");
+    } finally {
+      setAAtualizar(false);
+    }
+  };
 
   const submit = (event) => {
     event.preventDefault();
@@ -63,6 +105,22 @@ export default function Identity({ onEnter, notice }) {
           <PhoneIcon />
           Entrar como {themeById(hero).name}
         </button>
+
+        <div className="gate__update">
+          <button
+            type="button"
+            className="calls__teamBtn"
+            onClick={atualizar}
+            disabled={aAtualizar}
+          >
+            <DownloadIcon />
+            {aAtualizar ? "A verificar…" : "Atualizar app"}
+          </button>
+
+          <p className="gate__updateMsg" role="status" aria-live="polite">
+            {estado || `Versão ${VERSAO_APP.nome}`}
+          </p>
+        </div>
 
         <p className="calls__hint">
           Quem abrir o site com o mesmo herói assume a vez — como chamar no mesmo canal. Sem
