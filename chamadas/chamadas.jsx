@@ -21,7 +21,6 @@ import { STATUS_LABEL } from "./status";
 import {
   CameraIcon,
   ChatTabIcon,
-  ListTabIcon,
   MapTabIcon,
   MicIcon,
   PhoneIcon,
@@ -72,7 +71,7 @@ function formatTime(seconds) {
 
 const TABS = [
   { id: "roda", label: "Roda", Icon: WheelTabIcon },
-  { id: "contatos", label: "Contatos", Icon: ListTabIcon },
+  { id: "contatos", label: "Contatos", Icon: UsersIcon },
   { id: "recados", label: "Recados", Icon: ChatTabIcon },
   { id: "canal", label: "Canal", Icon: PhoneIcon },
   { id: "mapa", label: "Mapa", Icon: MapTabIcon },

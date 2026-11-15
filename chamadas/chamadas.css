@@ -134,7 +134,10 @@ body {
   top: 10px;
   z-index: 6;
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
   padding: 6px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -145,20 +148,22 @@ body {
 
 .calls__tab {
   display: inline-flex;
-  flex: 1 1 0;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 11px 12px;
+  padding: 10px 16px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--text-muted);
   font: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .calls__tab svg {
@@ -1399,9 +1404,8 @@ body {
   .calls__tabs {
     top: 6px;
     gap: 2px;
-    padding: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    padding: 5px;
+    width: 100%;
   }
 
   .calls__tabs::-webkit-scrollbar {
@@ -1409,15 +1413,18 @@ body {
   }
 
   .calls__tab {
+    /* ícone por cima do nome: cabe tudo sem apertar e o toque é maior */
+    flex: 1 1 0;
+    flex-direction: column;
     gap: 4px;
-    padding: 9px 5px;
-    font-size: 11.5px;
-    flex: 0 0 auto;
+    padding: 8px 2px;
+    font-size: 10.5px;
+    line-height: 1.1;
   }
 
   .calls__tab svg {
-    width: 13px;
-    height: 13px;
+    width: 19px;
+    height: 19px;
   }
 
   .calls__actions .calls__callBtn,
