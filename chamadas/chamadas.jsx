@@ -746,7 +746,14 @@ function CallsApp() {
       </header>
 
       <div className="calls__tabs" role="tablist" aria-label="Seções do comunicador" onKeyDown={onTabKeyDown}>
-        {TABS.map(({ id, label, Icon }) => {
+        <div className="calls__tabsInner">
+          <span
+            className="calls__tabGlow"
+            aria-hidden="true"
+            style={{ "--ativo": Math.max(0, TABS.findIndex((item) => item.id === tab)) }}
+          />
+
+          {TABS.map(({ id, label, Icon }) => {
           const active = tab === id;
           const badge = tabBadge(id);
 
@@ -771,7 +778,8 @@ function CallsApp() {
               ) : null}
             </button>
           );
-        })}
+          })}
+        </div>
       </div>
 
       {tab === "roda" ? (

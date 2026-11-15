@@ -1,7 +1,7 @@
 {
-  "versao": "1.16",
-  "codigo": 17,
+  "versao": "1.17",
+  "codigo": 18,
   "novidades": [
-    "Barra de abas nova: ícone em cima, nome em baixo e ícones mais claros"
+    "Barra de abas com fundo verde que desliza até à aba escolhida"
   ]
 }
