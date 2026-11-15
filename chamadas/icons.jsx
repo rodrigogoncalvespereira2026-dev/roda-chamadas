@@ -205,6 +205,15 @@ export function GearIcon(props) {
   );
 }
 
+/** Seta para voltar atrás. */
+export function BackIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
 /** Mão levantada. */
 export function HandIcon(props) {
   return (

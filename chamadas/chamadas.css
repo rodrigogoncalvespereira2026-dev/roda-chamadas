@@ -565,9 +565,62 @@ body {
   animation: panel-in 0.2s ease-out both;
 }
 
-.calls__settingsTitle {
+/* ecrã próprio das definições: a roda, as abas e o rodapé ficam de fora */
+.calls--settings > .calls__tabs,
+.calls--settings > .calls__panel,
+.calls--settings > .calls__foot {
+  display: none;
+}
+
+.calls--settings .calls__head {
+  align-items: stretch;
+}
+
+.calls--settings {
+  width: min(100%, 620px);
+}
+
+.calls__settingsTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.calls__settingsBack {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  background: rgba(25, 28, 26, 0.85);
+  color: var(--text-light);
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.calls__settingsBack svg {
+  width: 22px;
+  height: 22px;
+}
+
+.calls__settingsBack:hover {
+  border-color: color-mix(in oklch, var(--accent-base) 40%, transparent);
+  transform: scale(1.06);
+}
+
+.calls__settingsBack:active {
+  transform: scale(0.94);
+}
+
+.calls__settingsHeadTitle {
   margin: 0;
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -642,6 +695,13 @@ body {
   font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.02em;
+}
+
+.calls__settingsVersion {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
 }
 
 .calls__settingsPanel .calls__sub {

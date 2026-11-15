@@ -19,6 +19,7 @@ import { VERSAO_APP, versaoPublicada } from "./versao";
 import { THEMES, themeById } from "../carrossel/themes";
 import { STATUS_LABEL } from "./status";
 import {
+  BackIcon,
   CameraIcon,
   ChatTabIcon,
   GearIcon,
@@ -715,24 +716,35 @@ function CallsApp() {
   const [definicoes, setDefinicoes] = useState(false);
 
   return (
-    <main className="calls" style={{ "--accent-base": accent }}>
+    <main className={definicoes ? "calls calls--settings" : "calls"} style={{ "--accent-base": accent }}>
       <header className="calls__head">
-        <button
-          type="button"
-          className="calls__settings"
-          aria-pressed={definicoes}
-          aria-expanded={definicoes}
-          aria-label="Definições"
-          title="Definições"
-          onClick={() => setDefinicoes((aberto) => !aberto)}
-        >
-          <GearIcon />
-        </button>
+        {definicoes ? (
+          <div className="calls__settingsTop">
+            <button
+              type="button"
+              className="calls__settingsBack"
+              aria-label="Voltar às chamadas"
+              title="Voltar"
+              onClick={() => setDefinicoes(false)}
+            >
+              <BackIcon />
+            </button>
+            <h1 className="calls__settingsHeadTitle">Definições</h1>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="calls__settings"
+            aria-label="Abrir as definições"
+            title="Definições"
+            onClick={() => setDefinicoes(true)}
+          >
+            <GearIcon />
+          </button>
+        )}
 
         {definicoes ? (
           <section className="calls__settingsPanel" aria-label="Definições">
-            <h2 className="calls__settingsTitle">Definições</h2>
-
             <div className="calls__settingsMenu">
               <div className="calls__settingsRow">
                 <span className="calls__settingsLabel">Herói</span>
@@ -778,6 +790,7 @@ function CallsApp() {
                     Gire a roda, toque no círculo central para ligar e segure para chamar todo o
                     time. O brilho de cada círculo mostra quem está disponível agora.
                   </span>
+                  <span className="calls__settingsVersion">Versão {VERSAO_APP.nome}</span>
                 </span>
               </div>
             </div>

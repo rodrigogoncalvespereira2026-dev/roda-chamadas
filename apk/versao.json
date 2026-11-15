@@ -1,7 +1,7 @@
 {
-  "versao": "1.20",
-  "codigo": 21,
+  "versao": "1.21",
+  "codigo": 22,
   "novidades": [
-    "As definições ganharam menu próprio: herói, servidor, sessão e sobre"
+    "As definições passaram a ser um ecrã próprio, fora da roda e das abas"
   ]
 }
