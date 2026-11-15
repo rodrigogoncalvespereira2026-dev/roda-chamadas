@@ -21,6 +21,7 @@ import { STATUS_LABEL } from "./status";
 import {
   CameraIcon,
   ChatTabIcon,
+  GearIcon,
   MapTabIcon,
   MicIcon,
   PhoneIcon,
@@ -710,6 +711,9 @@ function CallsApp() {
     return "";
   };
 
+  /* Botão das definições no topo: por agora só muda de estado. */
+  const [definicoes, setDefinicoes] = useState(false);
+
   return (
     <main className="calls" style={{ "--accent-base": accent }}>
       <header className="calls__head">
@@ -741,6 +745,17 @@ function CallsApp() {
 
           <button type="button" className="calls__ghostBtn" onClick={leave}>
             Sair
+          </button>
+
+          <button
+            type="button"
+            className="calls__settings"
+            aria-pressed={definicoes}
+            aria-label="Definições"
+            title="Definições"
+            onClick={() => setDefinicoes((aberto) => !aberto)}
+          >
+            <GearIcon />
           </button>
         </div>
       </header>

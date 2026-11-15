@@ -489,6 +489,64 @@ body {
   outline-offset: 3px;
 }
 
+/* botão redondo das definições, no topo, em vidro fosco */
+.calls__settings {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  background: rgba(25, 28, 26, 0.85);
+  color: #8e9690;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+.calls__settings svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2.2;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.calls__settings:hover {
+  color: #fff;
+  border-color: color-mix(in oklch, var(--accent-base) 40%, transparent);
+  transform: scale(1.06);
+}
+
+.calls__settings:active {
+  transform: scale(0.94);
+}
+
+.calls__settings:focus-visible {
+  outline: 2px solid var(--accent40);
+  outline-offset: 3px;
+}
+
+.calls__settings[aria-pressed="true"] {
+  background: linear-gradient(135deg, var(--accent80) 0%, var(--accent100) 100%);
+  border-color: transparent;
+  color: #071409;
+  box-shadow: 0 0 22px color-mix(in oklch, var(--accent-base) 45%, transparent);
+}
+
+/* a engrenagem roda 90 graus quando fica ativa */
+.calls__settings[aria-pressed="true"] svg {
+  transform: rotate(90deg);
+}
+
 .calls__teamBtn {
   display: inline-flex;
   align-items: center;

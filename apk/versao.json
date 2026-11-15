@@ -1,7 +1,7 @@
 {
-  "versao": "1.17",
-  "codigo": 18,
+  "versao": "1.18",
+  "codigo": 19,
   "novidades": [
-    "Barra de abas com fundo verde que desliza até à aba escolhida"
+    "Botão das definições no topo, em vidro fosco e com engrenagem que roda"
   ]
 }
