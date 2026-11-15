@@ -717,49 +717,70 @@ function CallsApp() {
   return (
     <main className="calls" style={{ "--accent-base": accent }}>
       <header className="calls__head">
-        <div className="calls__me">
-          <span className="calls__meAvatar" aria-hidden="true">
-            <ThemeIcon id={me?.hero ?? identity.hero} />
-          </span>
-          <span>
-            <strong>{me?.name ?? themeById(identity.hero).name}</strong>
-            <span className={`statusDot is-${me?.status ?? "offline"}`}>
-              {STATUS_LABEL[me?.status ?? "offline"]}
-            </span>
-          </span>
-
-          <span className={`calls__link calls__link--${connection}`}>
-            {connection === "online"
-              ? "servidor ligado"
-              : connection === "connecting"
-                ? "conectando…"
-                : "sem servidor"}
-          </span>
-
-          <button type="button" className="calls__ghostBtn" onClick={leave}>
-            Sair
-          </button>
-
-          <button
-            type="button"
-            className="calls__settings"
-            aria-pressed={definicoes}
-            aria-label="Definições"
-            title="Definições"
-            onClick={() => setDefinicoes((aberto) => !aberto)}
-          >
-            <GearIcon />
-          </button>
-        </div>
+        <button
+          type="button"
+          className="calls__settings"
+          aria-pressed={definicoes}
+          aria-expanded={definicoes}
+          aria-label="Definições"
+          title="Definições"
+          onClick={() => setDefinicoes((aberto) => !aberto)}
+        >
+          <GearIcon />
+        </button>
 
         {definicoes ? (
           <section className="calls__settingsPanel" aria-label="Definições">
-            <p className="calls__eyebrow">Sistema Miraculous · {me ? "conectado" : connection}</p>
-            <h1>Roda de Chamadas</h1>
-            <p className="calls__sub">
-              Gire a roda, toque no círculo central para ligar e segure para chamar todo o time. O
-              brilho de cada círculo mostra quem está disponível agora.
-            </p>
+            <h2 className="calls__settingsTitle">Definições</h2>
+
+            <div className="calls__settingsMenu">
+              <div className="calls__settingsRow">
+                <span className="calls__settingsLabel">Herói</span>
+                <span className="calls__settingsValue">
+                  <span className="calls__meAvatar" aria-hidden="true">
+                    <ThemeIcon id={me?.hero ?? identity.hero} />
+                  </span>
+                  <strong>{me?.name ?? themeById(identity.hero).name}</strong>
+                  <span className={`statusDot is-${me?.status ?? "offline"}`}>
+                    {STATUS_LABEL[me?.status ?? "offline"]}
+                  </span>
+                </span>
+              </div>
+
+              <div className="calls__settingsRow">
+                <span className="calls__settingsLabel">Servidor</span>
+                <span className={`calls__settingsValue calls__link--${connection}`}>
+                  {connection === "online"
+                    ? "ligado"
+                    : connection === "connecting"
+                      ? "a ligar…"
+                      : "sem servidor"}
+                </span>
+              </div>
+
+              <div className="calls__settingsRow">
+                <span className="calls__settingsLabel">Sessão</span>
+                <span className="calls__settingsValue">
+                  <button type="button" className="calls__ghostBtn" onClick={leave}>
+                    Sair
+                  </button>
+                </span>
+              </div>
+
+              <div className="calls__settingsRow calls__settingsRow--about">
+                <span className="calls__settingsLabel">Sobre</span>
+                <span className="calls__settingsValue calls__settingsValue--stack">
+                  <span className="calls__eyebrow">
+                    Sistema Miraculous · {me ? "conectado" : connection}
+                  </span>
+                  <strong className="calls__settingsApp">Roda de Chamadas</strong>
+                  <span className="calls__sub">
+                    Gire a roda, toque no círculo central para ligar e segure para chamar todo o
+                    time. O brilho de cada círculo mostra quem está disponível agora.
+                  </span>
+                </span>
+              </div>
+            </div>
           </section>
         ) : null}
       </header>

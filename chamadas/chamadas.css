@@ -98,9 +98,10 @@ body {
 .calls__head {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* só a engrenagem vive aqui: fica à direita, como nas apps */
+  align-items: flex-end;
   gap: 10px;
-  text-align: center;
+  text-align: left;
 }
 
 .calls__eyebrow {
@@ -550,7 +551,7 @@ body {
 /* o que estava no cabeçalho vive agora dentro das definições */
 .calls__settingsPanel {
   display: grid;
-  gap: 10px;
+  gap: 14px;
   width: 100%;
   margin-top: 16px;
   padding: 18px;
@@ -564,13 +565,89 @@ body {
   animation: panel-in 0.2s ease-out both;
 }
 
-.calls__settingsPanel h1 {
-  font-size: clamp(22px, 5vw, 30px);
+.calls__settingsTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.calls__settingsMenu {
+  display: grid;
+}
+
+.calls__settingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.calls__settingsRow:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.calls__settingsLabel {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.calls__settingsValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  text-align: right;
+}
+
+.calls__settingsValue .calls__meAvatar {
+  width: 30px;
+  height: 30px;
+}
+
+.calls__settingsRow .calls__ghostBtn {
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12.5px;
+}
+
+.calls__settingsRow .calls__ghostBtn:hover {
+  background: var(--overlay);
+}
+
+/* o "sobre" ocupa a linha toda, com o texto à esquerda */
+.calls__settingsRow--about {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.calls__settingsValue--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+}
+
+.calls__settingsApp {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .calls__settingsPanel .calls__sub {
   max-width: none;
   font-size: 13px;
+  text-align: left;
 }
 
 .calls__teamBtn {

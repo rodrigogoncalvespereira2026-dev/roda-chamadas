@@ -1,7 +1,7 @@
 {
-  "versao": "1.19",
-  "codigo": 20,
+  "versao": "1.20",
+  "codigo": 21,
   "novidades": [
-    "O título, a descrição e o estado do sistema passaram para dentro das definições"
+    "As definições ganharam menu próprio: herói, servidor, sessão e sobre"
   ]
 }
