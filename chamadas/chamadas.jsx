@@ -717,13 +717,6 @@ function CallsApp() {
   return (
     <main className="calls" style={{ "--accent-base": accent }}>
       <header className="calls__head">
-        <p className="calls__eyebrow">Sistema Miraculous · {me ? "conectado" : connection}</p>
-        <h1>Roda de Chamadas</h1>
-        <p className="calls__sub">
-          Gire a roda, toque no círculo central para ligar e segure para chamar todo o time. O
-          brilho de cada círculo mostra quem está disponível agora.
-        </p>
-
         <div className="calls__me">
           <span className="calls__meAvatar" aria-hidden="true">
             <ThemeIcon id={me?.hero ?? identity.hero} />
@@ -758,6 +751,17 @@ function CallsApp() {
             <GearIcon />
           </button>
         </div>
+
+        {definicoes ? (
+          <section className="calls__settingsPanel" aria-label="Definições">
+            <p className="calls__eyebrow">Sistema Miraculous · {me ? "conectado" : connection}</p>
+            <h1>Roda de Chamadas</h1>
+            <p className="calls__sub">
+              Gire a roda, toque no círculo central para ligar e segure para chamar todo o time. O
+              brilho de cada círculo mostra quem está disponível agora.
+            </p>
+          </section>
+        ) : null}
       </header>
 
       <div className="calls__tabs" role="tablist" aria-label="Seções do comunicador" onKeyDown={onTabKeyDown}>
