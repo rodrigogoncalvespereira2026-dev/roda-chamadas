@@ -1,7 +1,7 @@
 {
-  "versao": "1.21",
-  "codigo": 22,
+  "versao": "1.22",
+  "codigo": 23,
   "novidades": [
-    "As definições passaram a ser um ecrã próprio, fora da roda e das abas"
+    "Mapa de satélite a sério, com os contatos por cima e zoom, sem sair da app"
   ]
 }
