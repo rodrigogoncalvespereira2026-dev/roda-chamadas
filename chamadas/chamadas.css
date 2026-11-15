@@ -1369,12 +1369,19 @@ body {
     top: 6px;
     gap: 4px;
     padding: 5px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .calls__tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .calls__tab {
     gap: 5px;
     padding: 10px 8px;
     font-size: 12.5px;
+    flex: 0 0 auto;
   }
 
   .calls__tab svg {
@@ -1407,9 +1414,6 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   }
 
-  .call__btn {
-    width: 64px;
-  }
 }
 
 /* ---------- entrada (nome + herói) ---------- */
@@ -2324,6 +2328,11 @@ body {
     flex-direction: row;
     padding-bottom: 4px;
     overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chat__list::-webkit-scrollbar {
+    display: none;
   }
 
   .chat__contact {
