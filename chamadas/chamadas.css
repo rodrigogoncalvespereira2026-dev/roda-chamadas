@@ -35,7 +35,8 @@
    rederivar a rampa, não só a cor base */
 .calls,
 .call,
-.ring {
+.ring,
+.foco {
   --accent120: color-mix(in oklch, var(--accent-base) 70%, black);
   --accent100: var(--accent-base);
   --accent80: color-mix(in oklch, var(--accent-base) 80%, white);
@@ -3540,4 +3541,166 @@ body.mapaCheio .calls__panel {
     width: 44%;
     max-width: 130px;
   }
+}
+
+/* ---------- ecrã único: a roda, o círculo escolhido e a chamada ---------- */
+
+/* a roda é a app inteira: sem abas, sem painel lateral, sem rodapé */
+.calls--roda {
+  justify-content: center;
+  gap: 0;
+  min-height: 100dvh;
+  padding: 0 16px;
+}
+
+.calls--roda .calls__head {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+}
+
+.calls__panel--roda {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 0 0 14px;
+}
+
+.calls__panel--roda .calls__wheelBox {
+  width: min(94vw, 560px);
+  padding: 0;
+}
+
+/* a roda é a protagonista: maior, para girar com o polegar */
+.calls__panel--roda .theme-wheel {
+  --wheel-radius: clamp(130px, 31vw, 205px);
+  --wheel-height: clamp(220px, 46vw, 310px);
+  --wheel-item-size: clamp(64px, 17vw, 94px);
+  width: 100%;
+}
+
+.calls__dica {
+  max-width: 26ch;
+  margin: 6px 0 0;
+  color: color-mix(in oklch, var(--accent-base) 55%, #6a6a6a);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.calls__aviso {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  animation: panel-in 0.2s ease-out both;
+}
+
+/* o círculo escolhido fica sozinho no ecrã, como no comunicador da série */
+.foco {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 20px 40px;
+  background:
+    radial-gradient(
+      120% 70% at 50% 0%,
+      color-mix(in oklch, var(--accent-base) 22%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      90% 60% at 50% 104%,
+      color-mix(in oklch, var(--accent-base) 18%, transparent),
+      transparent 66%
+    ),
+    #060606;
+  animation: call-in 0.22s ease-out both;
+}
+
+.foco__palco {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(80vw, 330px);
+  aspect-ratio: 1;
+  margin-bottom: 18px;
+}
+
+.foco__anel {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 50%, transparent);
+  border-radius: 50%;
+  animation: onda-tocar 2.4s ease-out infinite;
+}
+
+.foco__anel--atraso {
+  animation-delay: 1.2s;
+}
+
+.foco__bolha {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 66%;
+  aspect-ratio: 1;
+  border: 2px solid color-mix(in oklch, var(--accent-base) 70%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 34%,
+    color-mix(in oklch, var(--accent-base) 26%, transparent),
+    #080808 74%
+  );
+  color: var(--accent-base);
+  box-shadow: 0 0 60px color-mix(in oklch, var(--accent-base) 34%, transparent);
+  animation: avatar-pulsa 1.8s ease-in-out infinite;
+}
+
+.foco__bolha svg {
+  width: 56%;
+  height: 56%;
+}
+
+.foco__nome {
+  margin: 0;
+  font-size: clamp(24px, 7vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.foco__estado {
+  margin: 0;
+  color: var(--accent80);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.foco__cancelar {
+  margin-top: 26px;
+  padding: 12px 30px;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--accent-base) 10%, transparent);
+  color: var(--text-light);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.foco__cancelar:hover {
+  background: color-mix(in oklch, var(--accent-base) 20%, transparent);
+}
+
+/* a chamada passou a ser a tela inteira */
+.call {
+  overflow-y: auto;
 }

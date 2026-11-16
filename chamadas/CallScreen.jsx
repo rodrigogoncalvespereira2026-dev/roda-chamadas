@@ -291,7 +291,7 @@ export default function CallScreen({
   return (
     <div
       ref={painel}
-      className="call call--panel"
+      className="call"
       data-phase={ringing ? "ringing" : "active"}
       data-controls={mostrar ? "on" : "off"}
       style={{ "--accent-base": accent }}
@@ -504,27 +504,31 @@ export default function CallScreen({
               <EffectsIcon />
             </button>
 
-            <button
-              type="button"
-              className="call__btn call__btn--chat"
-              data-aberto={chatOpen ? "true" : undefined}
-              onClick={onChat}
-              aria-label={unread ? `Abrir os recados (${unread} por ler)` : "Abrir os recados"}
-              title="Recados"
-            >
-              {unread ? <i className="call__dot" aria-hidden="true" /> : null}
-              <ChatFillIcon />
-            </button>
+            {onChat ? (
+              <button
+                type="button"
+                className="call__btn call__btn--chat"
+                data-aberto={chatOpen ? "true" : undefined}
+                onClick={onChat}
+                aria-label={unread ? `Abrir os recados (${unread} por ler)` : "Abrir os recados"}
+                title="Recados"
+              >
+                {unread ? <i className="call__dot" aria-hidden="true" /> : null}
+                <ChatFillIcon />
+              </button>
+            ) : null}
 
-            <button
-              type="button"
-              className="call__btn"
-              onClick={onMap}
-              aria-label="Ver o time no mapa"
-              title="Mapa"
-            >
-              <PinIcon />
-            </button>
+            {onMap ? (
+              <button
+                type="button"
+                className="call__btn"
+                onClick={onMap}
+                aria-label="Ver o time no mapa"
+                title="Mapa"
+              >
+                <PinIcon />
+              </button>
+            ) : null}
           </>
         )}
       </div>

@@ -1,10 +1,10 @@
 {
-  "versao": "1.29",
-  "codigo": 30,
+  "versao": "1.30",
+  "codigo": 31,
   "novidades": [
-    "A chamada ganhou o desenho da série: um círculo grande, com o aro a respirar ao ritmo da sua voz",
-    "Os outros participantes aparecem em círculos mais pequenos, lado a lado, na cor de cada herói",
-    "Os controles aparecem com um toque no ecrã e escondem-se sozinhos; desligar fica sempre à vista",
-    "A chamada a receber toma conta do ecrã, com ondas a abrir e botões redondos para atender ou recusar"
+    "A app passou a ser só a roda: entra, gira com o dedo e toca no círculo da frente para ligar",
+    "Ao escolher um herói, todos os outros círculos desaparecem e fica só o escolhido, a chamar",
+    "Quem é chamado vê logo o círculo de quem está a ligar, com o nome",
+    "Saíram as abas e os painéis que não serviam à chamada: a chamada ocupa agora o ecrã inteiro"
   ]
 }

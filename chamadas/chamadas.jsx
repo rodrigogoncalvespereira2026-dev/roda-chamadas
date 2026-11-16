@@ -72,13 +72,6 @@ function formatTime(seconds) {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
-const TABS = [
-  { id: "roda", label: "Roda", Icon: WheelTabIcon },
-  { id: "contatos", label: "Contatos", Icon: UsersIcon },
-  { id: "recados", label: "Recados", Icon: ChatTabIcon },
-  { id: "canal", label: "Canal", Icon: PhoneIcon },
-  { id: "mapa", label: "Mapa", Icon: MapTabIcon },
-];
 
 const REASON_TEXT = {
   ended: "Chamada encerrada.",
@@ -111,8 +104,8 @@ function CallsApp() {
      desse return muda a ordem dos hooks e a app rebenta (React #310). */
   const [definicoes, setDefinicoes] = useState(false);
   const [focusHero, setFocusHero] = useState("");
-  const [selectMode, setSelectMode] = useState(false);
-  const [selection, setSelection] = useState([]);
+  /* herói tocado na roda: fica sozinho no ecrã até a chamada abrir */
+  const [escolhido, setEscolhido] = useState(null);
   const [kind, setKind] = useState("video");
   const [sharePlace, setSharePlace] = useState(true);
 
@@ -130,8 +123,6 @@ function CallsApp() {
   const [places, setPlaces] = useState({});
   const [locating, setLocating] = useState(false);
   const [geoError, setGeoError] = useState("");
-
-  const [exclude, setExclude] = useState(null);
 
   const rtRef = useRef(null);
   if (!rtRef.current) rtRef.current = createRealtime();
@@ -366,6 +357,7 @@ function CallsApp() {
         // reiniciou), o canal antigo não existe mais nesta ponta.
         closeSession();
         setCall(null);
+        setEscolhido(null);
         setIncoming([]);
       })
     );
@@ -389,8 +381,8 @@ function CallsApp() {
           place: data.place,
           connectedAt: null,
         });
+        setEscolhido(null);
         openSession({ callId: data.callId, kind: data.kind, members: data.members });
-        setTab("canal");
         setNotice(
           data.skipped?.length
             ? `Fora agora: ${data.skipped.map((item) => item.name).join(", ")}.`
@@ -444,8 +436,8 @@ function CallsApp() {
           place: data.place,
           connectedAt: Date.now(),
         });
+        setEscolhido(null);
         openSession({ callId: data.callId, kind: data.kind, members: data.members });
-        setTab("canal");
 
         if (data.place) {
           setPlaces((current) => ({ ...current, [data.from.hero]: data.place }));
@@ -570,6 +562,27 @@ function CallsApp() {
     return () => clearInterval(timer);
   }, [call]);
 
+  /* se a chamada não abrir depressa (ou o herói estiver offline), a roda volta */
+  useEffect(() => {
+    if (!escolhido || call) return undefined;
+
+    const offline = escolhido.status === "offline";
+
+    const timer = setTimeout(
+      () => {
+        setEscolhido(null);
+        setNotice(
+          offline
+            ? `${escolhido.name} não está online agora.`
+            : "Não foi possível abrir a chamada."
+        );
+      },
+      offline ? 1800 : 8000
+    );
+
+    return () => clearTimeout(timer);
+  }, [escolhido, call]);
+
   /* ---------- atalho ---------- */
 
   useEffect(() => {
@@ -598,16 +611,6 @@ function CallsApp() {
 
   /* ---------- roda: marcar, ligar, chamar todos ---------- */
 
-  const toggleSelection = useCallback((hero) => {
-    if (hero === identityRef.current?.hero) return;
-    setSelection((current) => {
-      if (current.includes(hero)) return current.filter((item) => item !== hero);
-      if (current.length >= ROOM_SIZE - 1) return current;
-      return [...current, hero];
-    });
-    setFocusHero(hero);
-  }, []);
-
   const onWheelSelect = useCallback((theme) => setFocusHero(theme.id), []);
 
   const onWheelActivate = useCallback(
@@ -615,74 +618,30 @@ function CallsApp() {
       setFocusHero(theme.id);
 
       if (theme.id === identityRef.current?.hero) {
-        setNotice("Este herói é você. Gire até outro círculo para ligar.");
+        setNotice("Este herói é você. Gire a roda até outro círculo.");
         return;
       }
+
+      if (callRef.current) return;
+
+      // os outros círculos desaparecem: fica só o escolhido
+      setEscolhido({ hero: theme.id, name: theme.name, status: theme.status });
+      setNotice("");
+
+      if (theme.status === "offline") return;
 
       startCall([theme.id], kind);
     },
     [kind, startCall]
   );
 
-  const onWheelToggle = useCallback((theme) => toggleSelection(theme.id), [toggleSelection]);
-
-  const holdRef = useRef(null);
-  const holdStart = useRef(null);
-
-  const beginHold = useCallback(
-    (event) => {
-      if (selectMode) return;
-      const option = event.target.closest?.(".theme-wheel__option");
-      if (!option || !option.classList.contains("is-active")) return;
-
-      holdStart.current = { x: event.clientX, y: event.clientY };
-      clearTimeout(holdRef.current);
-      holdRef.current = setTimeout(() => {
-        holdRef.current = null;
-        if (online.length) setExclude(online.map((person) => person.hero));
-      }, HOLD_MS);
-    },
-    [online, selectMode]
-  );
-
-  const moveHold = useCallback((event) => {
-    const start = holdStart.current;
-    if (!start || !holdRef.current) return;
-    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) {
-      clearTimeout(holdRef.current);
-      holdRef.current = null;
-    }
-  }, []);
-
-  const endHold = useCallback(() => {
-    clearTimeout(holdRef.current);
-    holdRef.current = null;
-    holdStart.current = null;
-  }, []);
-
-  const confirmCallAll = useCallback(() => {
-    const heroes = exclude ?? [];
-    setExclude(null);
-    if (heroes.length) startCall(heroes, kind);
-  }, [exclude, kind, startCall]);
+  const cancelarEscolha = useCallback(() => {
+    setEscolhido(null);
+    if (callRef.current) endCall();
+    else setNotice("");
+  }, [endCall]);
 
   /* ---------- abas ---------- */
-
-  const onTabKeyDown = (event) => {
-    const index = TABS.findIndex((item) => item.id === tab);
-    let next = null;
-
-    if (event.key === "ArrowRight") next = (index + 1) % TABS.length;
-    else if (event.key === "ArrowLeft") next = (index - 1 + TABS.length) % TABS.length;
-    else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = TABS.length - 1;
-
-    if (next === null) return;
-
-    event.preventDefault();
-    setTab(TABS[next].id);
-    document.getElementById(`aba-${TABS[next].id}`)?.focus();
-  };
 
   /* ---------- telas ---------- */
 
@@ -712,15 +671,11 @@ function CallsApp() {
   const invite = incoming[0] ?? null;
   const callMembers = call?.members ?? [];
 
-  const tabBadge = (id) => {
-    if (id === "roda") return selection.length ? String(selection.length) : "";
-    if (id === "recados") return totalUnread ? String(totalUnread) : "";
-    if (id === "canal") return call ? (call.phase === "ringing" ? "…" : String(callMembers.length)) : "";
-    return "";
-  };
-
   return (
-    <main className={definicoes ? "calls calls--settings" : "calls"} style={{ "--accent-base": accent }}>
+    <main
+      className={definicoes ? "calls calls--settings" : "calls calls--roda"}
+      style={{ "--accent-base": accent }}
+    >
       <header className="calls__head">
         {definicoes ? (
           <div className="calls__settingsTop">
@@ -802,302 +757,78 @@ function CallsApp() {
         ) : null}
       </header>
 
-      <div className="calls__tabs" role="tablist" aria-label="Seções do comunicador" onKeyDown={onTabKeyDown}>
-        <div className="calls__tabsInner">
-          <span
-            className="calls__tabGlow"
-            aria-hidden="true"
-            style={{ "--ativo": Math.max(0, TABS.findIndex((item) => item.id === tab)) }}
-          />
-
-          {TABS.map(({ id, label, Icon }) => {
-          const active = tab === id;
-          const badge = tabBadge(id);
-
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              id={`aba-${id}`}
-              className="calls__tab"
-              aria-selected={active}
-              aria-controls={`painel-${id}`}
-              tabIndex={active ? 0 : -1}
-              onClick={() => setTab(id)}
-            >
-              <Icon />
-              <span>{label}</span>
-              {badge ? (
-                <span className="calls__tabBadge" aria-hidden="true">
-                  {badge}
-                </span>
-              ) : null}
-            </button>
-          );
-          })}
-        </div>
-      </div>
-
-      {tab === "roda" ? (
-        <section className="calls__panel" role="tabpanel" id="painel-roda" aria-labelledby="aba-roda" tabIndex={0}>
-          <div className="calls__wheel">
-            <div className="calls__wheelHead">
-              <h2 className="calls__label">Heróis na roda</h2>
-
-              <button
-                type="button"
-                className="calls__ghostBtn"
-                aria-pressed={selectMode}
-                onClick={() => {
-                  setSelectMode((value) => !value);
-                  setSelection([]);
-                }}
-              >
-                {selectMode ? "Selecionando" : "Selecionar"}
-              </button>
-            </div>
-
-            <div
-              className="calls__wheelBox"
-              onPointerDown={beginHold}
-              onPointerMove={moveHold}
-              onPointerUp={endHold}
-              onPointerLeave={endHold}
-              onPointerCancel={endHold}
-            >
-              <ThemeWheel
-                themes={wheelThemes}
-                selectedTheme={focus?.hero}
-                selectedIds={selectMode ? selection : undefined}
-                onSelect={onWheelSelect}
-                onActivate={selectMode ? undefined : onWheelActivate}
-                onToggle={selectMode ? onWheelToggle : undefined}
-                label="Heróis"
-              />
-            </div>
-
-            <ul className="statusLegend" aria-label="Cores de estado">
-              <li>
-                <span className="statusDot is-available" aria-hidden="true" /> disponível
-              </li>
-              <li>
-                <span className="statusDot is-ringing" aria-hidden="true" /> a tocar
-              </li>
-              <li>
-                <span className="statusDot is-busy" aria-hidden="true" /> em chamada
-              </li>
-              <li>
-                <span className="statusDot is-offline" aria-hidden="true" /> offline
-              </li>
-            </ul>
-
-            <p className="calls__hint">
-              {selectMode
-                ? "Toque nos círculos para marcar quem entra na chamada."
-                : "Toque no círculo da frente para ligar. Segure para chamar todos os heróis online."}
-            </p>
-          </div>
-
-          <div className="calls__selection">
-            <div className="segmented" role="group" aria-label="Tipo de chamada">
-              <button
-                type="button"
-                className={`segmented__btn${kind === "voice" ? " is-on" : ""}`}
-                aria-pressed={kind === "voice"}
-                onClick={() => setKind("voice")}
-              >
-                <MicIcon /> Voz
-              </button>
-              <button
-                type="button"
-                className={`segmented__btn${kind === "video" ? " is-on" : ""}`}
-                aria-pressed={kind === "video"}
-                onClick={() => setKind("video")}
-              >
-                <CameraIcon /> Vídeo
-              </button>
-            </div>
-
-            <label className="calls__check">
-              <input
-                type="checkbox"
-                checked={sharePlace}
-                onChange={(event) => setSharePlace(event.target.checked)}
-              />
-              Enviar minha localização no alerta
-            </label>
-
-            <div className="calls__selectionHead">
-              <span className="calls__label">Na chamada</span>
-              <span className="calls__count">{selection.length}/{ROOM_SIZE - 1}</span>
-            </div>
-
-            {selection.length ? (
-              <ul className="calls__picks">
-                {selection.map((hero) => (
-                  <li key={hero} style={{ "--accent-base": themeById(hero).accent }}>
-                    <button
-                      type="button"
-                      className="calls__pick"
-                      onClick={() => toggleSelection(hero)}
-                      title={`Tirar ${themeById(hero).name} da chamada`}
-                    >
-                      <span className="calls__pickIcon" aria-hidden="true">
-                        <ThemeIcon id={hero} />
-                      </span>
-                      {themeById(hero).name}
-                      <span className="calls__pickClose" aria-hidden="true">×</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="calls__picksEmpty">
-                {focus
-                  ? `Toque no círculo central para ligar para ${focus.name}.`
-                  : "Ninguém marcado."}
-              </p>
-            )}
-
-            <div className="calls__actions">
-              <button
-                type="button"
-                className="calls__callBtn"
-                onClick={() => (selection.length ? startCall(selection, kind) : focus && startCall([focus.hero], kind))}
-                disabled={!focus || focus.hero === identity.hero || Boolean(call)}
-              >
-                <PhoneIcon />
-                {selection.length > 1
-                  ? `Chamar ${selection.length}`
-                  : focus
-                    ? `Ligar para ${focus.name}`
-                    : "Ligar"}
-              </button>
-
-              <button
-                type="button"
-                className="calls__teamBtn"
-                onClick={() => setExclude(online.map((person) => person.hero))}
-                disabled={!online.length || Boolean(call)}
-              >
-                <UsersIcon />
-                Chamar todos
-              </button>
-            </div>
-
-            {notice ? (
-              <p className="calls__notice" role="status" aria-live="polite">
-                {notice}
-              </p>
-            ) : null}
-
-            {me?.status && me.status !== "available" ? (
-              <p className="calls__hint">Seu estado agora: {STATUS_LABEL[me.status]}.</p>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-      {tab === "contatos" ? (
-        <section className="calls__panel" role="tabpanel" id="painel-contatos" aria-labelledby="aba-contatos" tabIndex={0}>
-          <ContactsPanel
-            people={others}
-            busy={Boolean(call)}
-            onFocus={(hero) => {
-              setFocusHero(hero);
-              setTab("roda");
-            }}
-            onCall={(hero) => startCall([hero], kind)}
-          />
-        </section>
-      ) : null}
-
-      {tab === "recados" ? (
-        <section className="calls__panel" role="tabpanel" id="painel-recados" aria-labelledby="aba-recados" tabIndex={0}>
-          <ChatPanel
-            people={others}
-            threads={threads}
-            unread={unread}
-            chatHero={chatHero}
-            onOpen={openChat}
-            onSend={sendMessage}
-          />
-        </section>
-      ) : null}
-
-      {tab === "canal" ? (
-        <section className="calls__panel" role="tabpanel" id="painel-canal" aria-labelledby="aba-canal" tabIndex={0}>
-          {call ? (
-            <CallScreen
-              call={call}
-              peers={view?.peers ?? []}
-              local={view?.local ?? null}
-              muted={view?.muted ?? false}
-              camera={view?.camera ?? kind === "video"}
-              facing={view?.facing ?? "user"}
-              mediaError={view?.mediaError ?? ""}
-              ringing={call.phase === "ringing"}
-              elapsed={elapsed}
-              unread={totalUnread}
-              eu={me?.hero ?? identity?.hero}
-              onMute={() => sessionRef.current?.setMuted(!(view?.muted ?? false))}
-              onCamera={() => sessionRef.current?.setCamera(!(view?.camera ?? false))}
-              onFlip={() => sessionRef.current?.flipCamera()}
-              onFixCamera={() => sessionRef.current?.restartCamera()}
-              onChat={() => setTab("recados")}
-              onMap={() => setTab("mapa")}
-              onEnd={endCall}
+      {!definicoes && !call && !escolhido ? (
+        <section className="calls__panel calls__panel--roda" id="painel-roda" aria-label="Heróis na roda">
+          <div className="calls__wheelBox">
+            <ThemeWheel
+              themes={wheelThemes}
+              selectedTheme={focus?.hero}
+              onSelect={onWheelSelect}
+              onActivate={onWheelActivate}
+              label="Heróis"
             />
-          ) : (
-            <div className="calls__idle">
-              <span className="calls__idleIcon" aria-hidden="true">
-                <PhoneIcon />
-              </span>
-              <h2>Nenhum canal aberto</h2>
-              <p>
-                {focus
-                  ? `Na frente da roda: ${focus.name} (${STATUS_LABEL[focus.status]}).`
-                  : "Gire a roda para escolher quem chamar."}
-              </p>
+          </div>
 
-              <button
-                type="button"
-                className="calls__callBtn"
-                onClick={() => focus && startCall(selection.length ? selection : [focus.hero], kind)}
-                disabled={!focus}
-              >
-                <PhoneIcon />
-                Abrir canal
-              </button>
+          {notice ? (
+            <p className="calls__aviso" role="status" aria-live="polite">
+              {notice}
+            </p>
+          ) : null}
 
-              {notice ? (
-                <p className="calls__notice" role="status">
-                  {notice}
-                </p>
-              ) : null}
+          <p className="calls__dica">Gire a roda e toque no círculo da frente para ligar.</p>
 
-              <p className="calls__hint">
-                Chamada de {kind === "video" ? "vídeo" : "voz"} ponto a ponto pelo WebRTC. O
-                servidor só apresenta as duas pontas.
-              </p>
-            </div>
-          )}
+          {connection !== "online" ? (
+            <p className="calls__aviso">À procura do servidor…</p>
+          ) : null}
         </section>
       ) : null}
 
-      {tab === "mapa" ? (
-        <section className="calls__panel" role="tabpanel" id="painel-mapa" aria-labelledby="aba-mapa" tabIndex={0}>
-          <MapPanel
-            people={others}
-            places={places}
-            myPlace={myPlace}
-            locating={locating}
-            geoError={geoError}
-            onLocate={locate}
-          />
+      {escolhido && !call ? (
+        <section
+          className="foco"
+          style={{ "--accent-base": themeById(escolhido.hero).accent }}
+          aria-live="polite"
+        >
+          <div className="foco__palco" aria-hidden="true">
+            <span className="foco__anel" />
+            <span className="foco__anel foco__anel--atraso" />
+            <span className="foco__bolha">
+              <ThemeIcon id={escolhido.hero} />
+            </span>
+          </div>
+
+          <h1 className="foco__nome">{escolhido.name}</h1>
+          <p className="foco__estado">
+            {escolhido.status === "offline" ? "está offline" : "a chamar…"}
+          </p>
+
+          <button type="button" className="foco__cancelar" onClick={cancelarEscolha}>
+            Cancelar
+          </button>
         </section>
       ) : null}
+
+      {call ? (
+        <CallScreen
+          call={call}
+          peers={view?.peers ?? []}
+          local={view?.local ?? null}
+          muted={view?.muted ?? false}
+          camera={view?.camera ?? kind === "video"}
+          facing={view?.facing ?? "user"}
+          mediaError={view?.mediaError ?? ""}
+          ringing={call.phase === "ringing"}
+          elapsed={elapsed}
+          unread={0}
+          eu={me?.hero ?? identity?.hero}
+          onMute={() => sessionRef.current?.setMuted(!(view?.muted ?? false))}
+          onCamera={() => sessionRef.current?.setCamera(!(view?.camera ?? false))}
+          onFlip={() => sessionRef.current?.flipCamera()}
+          onFixCamera={() => sessionRef.current?.restartCamera()}
+          onEnd={endCall}
+        />
+      ) : null}
+
 
       {invite ? (
         <IncomingCall
@@ -1109,59 +840,9 @@ function CallsApp() {
         />
       ) : null}
 
-      {exclude ? (
-        <div className="modal" role="dialog" aria-modal="true" aria-label="Quem entra na chamada">
-          <div className="modal__card">
-            <h2>Chamar todos</h2>
-            <p className="calls__hint">
-              Desmarque quem não deve ser incomodado. Só entram os heróis online.
-            </p>
-
-            <ul className="modal__list">
-              {online.map((person) => (
-                <li key={person.hero} style={{ "--accent-base": themeById(person.hero).accent }}>
-                  <label className="calls__check">
-                    <input
-                      type="checkbox"
-                      checked={exclude.includes(person.hero)}
-                      onChange={(event) =>
-                        setExclude((current) =>
-                          event.target.checked
-                            ? [...(current ?? []), person.hero]
-                            : (current ?? []).filter((hero) => hero !== person.hero)
-                        )
-                      }
-                    />
-                    <span className="modal__avatar" aria-hidden="true">
-                      <ThemeIcon id={person.hero} />
-                    </span>
-                    {person.name}
-                    <span className={`statusDot is-${person.status}`} aria-hidden="true" />
-                  </label>
-                </li>
-              ))}
-            </ul>
-
-            <div className="modal__actions">
-              <button type="button" className="calls__ghostBtn" onClick={() => setExclude(null)}>
-                Cancelar
-              </button>
-              <button type="button" className="calls__callBtn" onClick={confirmCallAll} disabled={!exclude.length}>
-                <PhoneIcon />
-                Chamar {exclude.length}
-              </button>
-            </div>
-          </div>
-        </div>
+      {novaVersao ? (
+        <Atualizar versao={novaVersao} onFechar={() => setNovaVersao(null)} />
       ) : null}
-
-      <footer className="calls__foot">
-        <p>
-          Chamada {kind === "video" ? "de vídeo" : "de voz"} com WebRTC · {formatTime(elapsed)} no canal
-        </p>
-      </footer>
-
-      {novaVersao ? <Atualizar versao={novaVersao} onFechar={() => setNovaVersao(null)} /> : null}
     </main>
   );
 }
