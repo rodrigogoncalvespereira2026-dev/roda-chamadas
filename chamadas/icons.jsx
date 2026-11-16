@@ -273,6 +273,52 @@ export function BookmarkIcon(props) {
   );
 }
 
+/** Seguir posição (seta de navegação). */
+export function NavigationIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3.4 20 20.6 12 17 4 20.6Z" />
+    </svg>
+  );
+}
+
+/** Rota de carro. */
+export function CarIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 16.5v-3.2l1.8-4.1A2 2 0 0 1 8.6 8h6.8a2 2 0 0 1 1.8 1.2L19 13.3v3.2" />
+      <path d="M4.4 13.3h15.2" />
+      <circle cx="7.6" cy="16.6" r="1.7" />
+      <circle cx="16.4" cy="16.6" r="1.7" />
+    </svg>
+  );
+}
+
+/** Rota a pé. */
+export function WalkIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="13.4" cy="4.8" r="1.7" />
+      <path d="M13 8.4 9.6 10.2l.8 3.4L8.4 20" />
+      <path d="M13 8.4 15.8 11l1 3.4 2.4 1.6" />
+      <path d="M12.4 12.4 15.6 20" />
+    </svg>
+  );
+}
+
+/** Rota de bicicleta. */
+export function BikeIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="5.8" cy="17" r="3.2" />
+      <circle cx="18.2" cy="17" r="3.2" />
+      <path d="M8.9 17h4L16 10.6h-3.2" />
+      <path d="M12.9 10.6 15.6 17" />
+      <path d="M9.4 10.2h3.4" />
+    </svg>
+  );
+}
+
 /** Copiar. */
 export function CopyIcon(props) {
   return (

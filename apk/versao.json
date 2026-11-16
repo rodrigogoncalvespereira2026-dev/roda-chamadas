@@ -1,9 +1,9 @@
 {
-  "versao": "1.26",
-  "codigo": 27,
+  "versao": "1.27",
+  "codigo": 28,
   "novidades": [
-    "Rota pelas ruas até um contato ou um lugar, com distância e tempo de carro",
-    "Guarda lugares no mapa: ficam no seu aparelho e aparecem com alfinete",
-    "Copiar ou partilhar um link com a sua posição"
+    "Rotas a pé e de bicicleta, além de carro, cada uma com o seu tempo",
+    "Seguir a sua posição ao vivo no mapa, com a velocidade",
+    "Os avisos do mapa passam para baixo dele, sem tapar a escala nem o zoom"
   ]
 }

@@ -3,16 +3,20 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import { themeById } from "../carrossel/themes";
-import { distanceKm, formatKm } from "./geo";
+import { decodificarPolilinha, distanceKm, formatKm } from "./geo";
 import {
+  BikeIcon,
   BookmarkIcon,
+  CarIcon,
   CopyIcon,
   ExpandIcon,
+  NavigationIcon,
   PinIcon,
   RouteIcon,
   RulerIcon,
   ShrinkIcon,
   TargetIcon,
+  WalkIcon,
 } from "./icons";
 import { statusLabel } from "./status";
 
@@ -82,8 +86,14 @@ const ICONE_LUGAR = L.divIcon({
   iconAnchor: [12, 22],
 });
 
-/* OSRM público: rotas pelas ruas, com tempo estimado de carro */
-const ROTAS = "https://router.project-osrm.org/route/v1/driving";
+/* Valhalla público: rotas pelas ruas de carro, a pé e de bicicleta */
+const ROTAS = "https://valhalla1.openstreetmap.de/route";
+
+const PERFIS = {
+  carro: { rotulo: "Carro", frase: "de carro", custo: "auto", Icone: CarIcon },
+  pe: { rotulo: "A pé", frase: "a pé", custo: "pedestrian", Icone: WalkIcon },
+  bike: { rotulo: "Bicicleta", frase: "de bicicleta", custo: "bicycle", Icone: BikeIcon },
+};
 
 const CHAVE_LUGARES = "roda:lugares";
 
@@ -134,6 +144,7 @@ export default function MapPanel({
   const buscaCamada = useRef(null);
   const rotaCamada = useRef(null);
   const lugaresCamada = useRef(null);
+  const vivoCamada = useRef(null);
   const reguaLigada = useRef(false);
 
   const [base, setBase] = useState("satelite");
@@ -145,7 +156,10 @@ export default function MapPanel({
   const [achado, setAchado] = useState("");
   const [achadoLugar, setAchadoLugar] = useState(null);
   const [rota, setRota] = useState(null);
+  const [perfil, setPerfil] = useState("carro");
   const [aRotar, setARotar] = useState(false);
+  const [seguir, setSeguir] = useState(false);
+  const [vivo, setVivo] = useState(null);
   const [aviso, setAviso] = useState("");
   const [lugares, setLugares] = useState(lerLugares);
   const [guardarAberto, setGuardarAberto] = useState(false);
@@ -198,6 +212,7 @@ export default function MapPanel({
     reguaCamada.current = L.layerGroup().addTo(map);
     buscaCamada.current = L.layerGroup().addTo(map);
     lugaresCamada.current = L.layerGroup().addTo(map);
+    vivoCamada.current = L.layerGroup().addTo(map);
     /* a rota fica por baixo dos alfinetes, mas acima das ruas */
     rotaCamada.current = L.layerGroup().addTo(map);
     mapa.current = map;
@@ -218,6 +233,7 @@ export default function MapPanel({
       buscaCamada.current = null;
       rotaCamada.current = null;
       lugaresCamada.current = null;
+      vivoCamada.current = null;
       baseCamadas.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -241,10 +257,13 @@ export default function MapPanel({
 
     grupo.clearLayers();
 
-    if (myPlace) {
-      L.marker([myPlace.lat, myPlace.lng], { icon: ICONE_VOCE, zIndexOffset: 900 })
+    /* com o seguir ligado vale a posição ao vivo, senão a última lida */
+    const eu = vivo ?? myPlace;
+
+    if (eu) {
+      L.marker([eu.lat, eu.lng], { icon: ICONE_VOCE, zIndexOffset: 900 })
         .addTo(grupo)
-        .bindTooltip("Você");
+        .bindTooltip(vivo ? `Você${vivo.kmh ? ` · ${Math.round(vivo.kmh)} km/h` : ""}` : "Você");
     }
 
     entries.forEach(({ person, place, km }) => {
@@ -258,7 +277,7 @@ export default function MapPanel({
         })
         .bindPopup(`<strong>${person.name}</strong><br>${formatKm(km)} de você`);
     });
-  }, [entries, myPlace]);
+  }, [entries, myPlace, vivo]);
 
   /* régua: cada toque no mapa marca um ponto */
   useEffect(() => {
@@ -334,6 +353,43 @@ export default function MapPanel({
 
     mapa.current.setView([myPlace.lat, myPlace.lng], Math.max(mapa.current.getZoom(), 14));
   }, [myPlace]);
+
+  /* seguir a posição ao vivo, só enquanto o botão estiver ligado */
+  useEffect(() => {
+    if (!seguir) return;
+
+    if (!navigator.geolocation?.watchPosition) {
+      setAviso("Este navegador não consegue seguir a posição.");
+      setSeguir(false);
+      return;
+    }
+
+    const id = navigator.geolocation.watchPosition(
+      (posicao) =>
+        setVivo({
+          lat: posicao.coords.latitude,
+          lng: posicao.coords.longitude,
+          kmh:
+            Number.isFinite(posicao.coords.speed) && posicao.coords.speed > 0
+              ? posicao.coords.speed * 3.6
+              : null,
+        }),
+      () => {
+        setSeguir(false);
+        setAviso("Não consegui seguir a sua posição. Verifique a permissão de localização.");
+      },
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(id);
+  }, [seguir]);
+
+  /* enquanto segue, o mapa anda atrás de você */
+  useEffect(() => {
+    if (!seguir || !vivo) return;
+
+    mapa.current?.setView([vivo.lat, vivo.lng], 16, { animate: false });
+  }, [seguir, vivo]);
 
   /* ecrã inteiro: o Leaflet precisa de medir outra vez */
   useEffect(() => {
@@ -414,7 +470,7 @@ export default function MapPanel({
   };
 
   /* rota pelas ruas até um ponto (contato, lugar guardado ou procura) */
-  const tracarRota = async (destino) => {
+  const tracarRota = async (destino, perfilEscolhido = perfil) => {
     if (!destino || aRotar) return;
 
     if (!myPlace) {
@@ -423,31 +479,42 @@ export default function MapPanel({
       return;
     }
 
+    setPerfil(perfilEscolhido);
     setAviso("");
     setARotar(true);
 
     try {
-      const url =
-        `${ROTAS}/${myPlace.lng},${myPlace.lat};${destino.lng},${destino.lat}` +
-        "?overview=full&geometries=geojson";
+      const resposta = await fetch(ROTAS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          locations: [
+            { lat: myPlace.lat, lon: myPlace.lng },
+            { lat: destino.lat, lon: destino.lng },
+          ],
+          costing: PERFIS[perfilEscolhido].custo,
+          directions_options: { units: "kilometers" },
+        }),
+      });
 
-      const resposta = await fetch(url);
       if (!resposta.ok) throw new Error();
 
       const dados = await resposta.json();
-      const caminho = dados?.routes?.[0];
+      const viagem = dados?.trip;
 
-      if (!caminho) {
+      if (!viagem?.legs?.length) {
         setAviso("Não encontrei uma rota pelas ruas até aí.");
         return;
       }
 
-      const pontosRota = caminho.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+      const pontosRota = viagem.legs.flatMap((leg) => decodificarPolilinha(leg.shape));
 
       setRota({
         nome: destino.nome ?? "o destino",
-        km: caminho.distance / 1000,
-        min: caminho.duration / 60,
+        destino,
+        perfil: perfilEscolhido,
+        km: viagem.summary.length,
+        min: viagem.summary.time / 60,
         pontos: pontosRota,
       });
 
@@ -644,6 +711,17 @@ export default function MapPanel({
           <button
             type="button"
             className="map__ferramenta"
+            aria-pressed={seguir}
+            title={seguir ? "Deixar de seguir a posição" : "Seguir a minha posição"}
+            aria-label={seguir ? "Deixar de seguir a posição" : "Seguir a minha posição"}
+            onClick={() => setSeguir((ativo) => !ativo)}
+          >
+            <NavigationIcon />
+          </button>
+
+          <button
+            type="button"
+            className="map__ferramenta"
             aria-pressed={guardarAberto}
             title="Guardar o centro do mapa"
             aria-label="Guardar o centro do mapa"
@@ -673,32 +751,69 @@ export default function MapPanel({
             {cheio ? <ShrinkIcon /> : <ExpandIcon />}
           </button>
         </div>
+      </div>
 
-        {rota ? (
-          <div className="map__rota" role="status">
-            <RouteIcon />
-            <span>
-              {formatKm(rota.km)} · {formatMinutos(rota.min)} de carro até {rota.nome}
-            </span>
-            <button type="button" onClick={() => setRota(null)}>
-              limpar
-            </button>
+      {/* os avisos ficam abaixo do mapa, para não taparem a escala nem o zoom */}
+      {seguir ? (
+        <div className="map__cartao map__cartao--seguir" role="status" aria-live="polite">
+          <NavigationIcon />
+          <span>
+            {vivo
+              ? `A seguir a sua posição${vivo.kmh ? ` · ${Math.round(vivo.kmh)} km/h` : ""}`
+              : "À espera do GPS…"}
+          </span>
+          <button type="button" onClick={() => setSeguir(false)}>
+            parar
+          </button>
+        </div>
+      ) : null}
+
+      {rota ? (
+        <div className="map__cartao map__cartao--rota" role="status" aria-live="polite">
+          <div className="map__rotaPerfis" role="group" aria-label="Como ir">
+            {Object.entries(PERFIS).map(([id, opcao]) => (
+              <button
+                key={id}
+                type="button"
+                className="map__rotaPerfil"
+                aria-pressed={rota.perfil === id}
+                title={`Rota ${opcao.rotulo.toLowerCase()}`}
+                aria-label={`Rota ${opcao.rotulo.toLowerCase()}`}
+                disabled={aRotar}
+                onClick={() => tracarRota(rota.destino, id)}
+              >
+                <opcao.Icone />
+              </button>
+            ))}
           </div>
-        ) : null}
 
-        {regua ? (
-          <div className={`map__medida${rota ? " map__medida--acima" : ""}`} role="status">
+          <span className="map__cartaoTexto">
+            {aRotar
+              ? "A calcular…"
+              : `${formatKm(rota.km)} · ${formatMinutos(rota.min)} ${PERFIS[rota.perfil].frase} até ${rota.nome}`}
+          </span>
+
+          <button type="button" className="map__cartaoAcao" onClick={() => setRota(null)}>
+            limpar
+          </button>
+        </div>
+      ) : null}
+
+      {regua ? (
+        <div className="map__cartao" role="status" aria-live="polite">
+          <RulerIcon />
+          <span className="map__cartaoTexto">
             {pontos.length
               ? `${formatKm(medida)} · ${pontos.length} ${pontos.length === 1 ? "ponto" : "pontos"}`
               : "Toque no mapa para marcar os pontos."}
-            {pontos.length ? (
-              <button type="button" onClick={() => setPontos([])}>
-                limpar
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+          </span>
+          {pontos.length ? (
+            <button type="button" className="map__cartaoAcao" onClick={() => setPontos([])}>
+              limpar
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <p className="calls__hint">
         {known

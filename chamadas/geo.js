@@ -20,6 +20,43 @@ export function distanceKm(a, b) {
   return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
+/**
+  Descodifica a polilinha comprimida do Valhalla (precisão 6): cada valor vem
+  em passos de 5 bits e o último bit diz o sinal.
+*/
+function lerValor(texto, estado) {
+  let valor = 0;
+  let deslocamento = 0;
+  let byte;
+
+  do {
+    byte = texto.charCodeAt(estado.i) - 63;
+    estado.i += 1;
+    valor |= (byte & 0x1f) << deslocamento;
+    deslocamento += 5;
+  } while (byte >= 0x20 && estado.i < texto.length);
+
+  return valor & 1 ? ~(valor >> 1) : valor >> 1;
+}
+
+export function decodificarPolilinha(texto, precisao = 6) {
+  if (!texto) return [];
+
+  const fator = 10 ** precisao;
+  const estado = { i: 0 };
+  const pontos = [];
+  let lat = 0;
+  let lng = 0;
+
+  while (estado.i < texto.length) {
+    lat += lerValor(texto, estado);
+    lng += lerValor(texto, estado);
+    pontos.push([lat / fator, lng / fator]);
+  }
+
+  return pontos;
+}
+
 export function formatKm(km) {
   if (km == null) return "";
   if (km < 1) return `${Math.round(km * 1000)} m`;

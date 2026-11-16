@@ -1496,37 +1496,6 @@ body {
   color: #071409;
 }
 
-/* régua: distância total marcada */
-.map__medida {
-  position: absolute;
-  left: 50%;
-  bottom: 10px;
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(10, 10, 10, 0.82);
-  color: var(--text-light);
-  font-size: 11.5px;
-  font-weight: 600;
-  white-space: nowrap;
-  transform: translateX(-50%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.map__medida button {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent80);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
 
 /* ecrã inteiro */
 .mapWrap--cheio {
@@ -1996,42 +1965,39 @@ body.mapaCheio .calls__panel {
   min-width: 0;
 }
 
-/* rota ativa */
-.map__rota {
-  position: absolute;
-  left: 50%;
-  bottom: 10px;
-  z-index: 900;
+/* cartões de estado: seguir, rota e régua, abaixo do mapa */
+.map__cartao {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  max-width: calc(100% - 20px);
-  padding: 7px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(10, 10, 10, 0.85);
+  border-radius: 14px;
+  background: var(--surface);
   color: var(--text-light);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
-  transform: translateX(-50%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
-.map__rota svg {
+.map__cartao > svg {
   flex: 0 0 auto;
   width: 15px;
   height: 15px;
   color: var(--accent80);
 }
 
-.map__rota span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.map__cartao--seguir {
+  border-color: color-mix(in oklch, var(--accent-base) 45%, transparent);
 }
 
-.map__rota button {
+.map__cartaoTexto {
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
+.map__cartaoAcao {
+  margin-left: auto;
   padding: 0;
   border: 0;
   background: transparent;
@@ -2040,6 +2006,41 @@ body.mapaCheio .calls__panel {
   text-decoration: underline;
   cursor: pointer;
 }
+
+.map__rotaPerfis {
+  display: flex;
+  gap: 4px;
+}
+
+.map__rotaPerfil {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.map__rotaPerfil svg {
+  width: 15px;
+  height: 15px;
+}
+
+.map__rotaPerfil[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--accent100);
+  color: #071409;
+}
+
+.map__rotaPerfil:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 
 .map__medida--acima {
   bottom: 52px;
