@@ -52,7 +52,18 @@ function prepararCanal() {
           lights: true,
         });
       } catch {
-        /* canal já existia */
+        // canal já existia ou um extra não é aceite nesta versão do Android:
+        // fica só o essencial (alta prioridade e vibração)
+        try {
+          await LocalNotifications.createChannel({
+            id: CANAL,
+            name: "Chamadas",
+            importance: 5,
+            vibration: true,
+          });
+        } catch {
+          /* sem canal fica o das notificações normais */
+        }
       }
 
       try {
