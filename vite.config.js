@@ -43,6 +43,10 @@ export default defineConfig({
     },
   },
   build: {
+    /* WebView antigo de Android não entende sintaxe de 2020: `?.` e `??`
+       davam erro de sintaxe e a app abria em branco. Baixar o alvo custa
+       alguns bytes e garante que o bundle é lido. */
+    target: "es2017",
     rollupOptions: {
       // Duas páginas: a roda de chamadas na raiz (index.html) e o perfil do
       // site (perfil.html), que fica fora do caminho da app.

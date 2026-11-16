@@ -1,9 +1,9 @@
 {
-  "versao": "1.27",
-  "codigo": 28,
+  "versao": "1.28",
+  "codigo": 29,
   "novidades": [
-    "Rotas a pé e de bicicleta, além de carro, cada uma com o seu tempo",
-    "Seguir a sua posição ao vivo no mapa, com a velocidade",
-    "Os avisos do mapa passam para baixo dele, sem tapar a escala nem o zoom"
+    "Corrige o ecrã preto ao abrir em WebView antigo: o código baixou para sintaxe de 2017",
+    "A app abre mesmo sem acesso ao Google Fonts",
+    "Se não arrancar, mostra o erro no ecrã em vez de ficar em branco"
   ]
 }

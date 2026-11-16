@@ -1,4 +1,9 @@
 {
+  "29": [
+    "Corrige o ecrã preto ao abrir em WebView antigo: o código baixou para sintaxe de 2017",
+    "A app abre mesmo sem acesso ao Google Fonts",
+    "Se não arrancar, mostra o erro no ecrã em vez de ficar em branco"
+  ],
   "28": [
     "Rotas a pé e de bicicleta, além de carro, cada uma com o seu tempo",
     "Seguir a sua posição ao vivo no mapa, com a velocidade",

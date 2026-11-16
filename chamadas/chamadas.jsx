@@ -13,6 +13,7 @@ import MapPanel from "./MapPanel";
 import { CallSession } from "./calls";
 import { createRealtime } from "./realtime";
 import { readPosition } from "./geo";
+import { sessao } from "./armazem";
 import { IS_NATIVE } from "./plataforma";
 import { PRECISA_INSTALAR } from "./instalacao";
 import { VERSAO_APP, versaoPublicada } from "./versao";
@@ -54,10 +55,10 @@ const HOLD_MS = 550;
  * "entrou em outro aparelho") e que duas abas são dois heróis.
  */
 const TAB_ID = (() => {
-  let id = sessionStorage.getItem("roda:aba");
+  let id = sessao.ler("roda:aba");
   if (!id) {
     id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    sessionStorage.setItem("roda:aba", id);
+    sessao.guardar("roda:aba", id);
   }
   return id;
 })();
@@ -88,12 +89,12 @@ const REASON_TEXT = {
 function CallsApp() {
   /* No iPhone, a app pede primeiro para ser instalada no ecrã principal. */
   const [instalando, setInstalando] = useState(
-    () => PRECISA_INSTALAR && !sessionStorage.getItem("roda:safari")
+    () => PRECISA_INSTALAR && !sessao.ler("roda:safari")
   );
 
   /* A conta é o herói desta aba: recarregar a página não derruba ninguém. */
   const [identity, setIdentity] = useState(() => {
-    const hero = sessionStorage.getItem("roda:hero");
+    const hero = sessao.ler("roda:hero");
     return hero ? { hero } : null;
   });
   /* Dentro do APK, a versão publicada no servidor pode ser mais nova que esta. */
@@ -499,7 +500,7 @@ function CallsApp() {
 
     offs.push(
       rt.on("kicked", ({ message }) => {
-        sessionStorage.removeItem("roda:hero");
+        sessao.apagar("roda:hero");
         setIdentity(null);
         setMe(null);
         setPeople(offlineRoster());
@@ -544,7 +545,7 @@ function CallsApp() {
 
   const leave = useCallback(() => {
     if (callRef.current) endCall();
-    sessionStorage.removeItem("roda:hero");
+    sessao.apagar("roda:hero");
     setIdentity(null);
     setMe(null);
     setPeople(offlineRoster());
@@ -687,7 +688,7 @@ function CallsApp() {
     return (
       <Instalar
         onContinuar={() => {
-          sessionStorage.setItem("roda:safari", "1");
+          sessao.guardar("roda:safari", "1");
           setInstalando(false);
         }}
       />

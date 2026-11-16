@@ -3,6 +3,7 @@ import ThemeIcon from "../carrossel/ThemeIcon";
 import { THEMES, themeById } from "../carrossel/themes";
 import { DownloadIcon, PhoneIcon } from "./icons";
 import { IS_NATIVE } from "./plataforma";
+import { sessao } from "./armazem";
 import { APK_URL, VERSAO_APP, versaoPublicada } from "./versao";
 import { instalarNoAparelho } from "./atualizarApk";
 
@@ -14,7 +15,7 @@ import { instalarNoAparelho } from "./atualizarApk";
  * diferentes, que é como se testa uma chamada no mesmo computador.
  */
 export default function Identity({ onEnter, notice }) {
-  const [hero, setHero] = useState(() => sessionStorage.getItem("roda:hero") ?? "cat");
+  const [hero, setHero] = useState(() => sessao.ler("roda:hero") ?? "cat");
   const [aAtualizar, setAAtualizar] = useState(false);
   const [estado, setEstado] = useState("");
 
@@ -57,7 +58,7 @@ export default function Identity({ onEnter, notice }) {
 
   const submit = (event) => {
     event.preventDefault();
-    sessionStorage.setItem("roda:hero", hero);
+    sessao.guardar("roda:hero", hero);
     onEnter({ hero });
   };
 

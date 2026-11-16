@@ -19,10 +19,79 @@
 
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+		<!-- A fonte não pode segurar o arranque: se o Google não responder (rede
+		     fraca, sem internet), a app tem de abrir na mesma com as fontes do
+		     sistema. Por isso entra como print e só é aplicada quando chega. -->
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+			media="print"
+			onload="this.media='all'"
+		/>
+		<noscript>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+		</noscript>
 	</head>
 	<body>
 		<div id="root"></div>
+
+		<!-- Rede de segurança: se o bundle não arrancar (WebView antigo, erro no
+		     topo de um módulo), aparece o erro em vez de um ecrã preto. -->
+		<script>
+			window.__erroApp = "";
+			window.addEventListener("error", function (evento) {
+				window.__erroApp = window.__erroApp || String((evento && evento.message) || "erro");
+			});
+			window.addEventListener("unhandledrejection", function (evento) {
+				var razao = evento && evento.reason;
+				window.__erroApp =
+					window.__erroApp || String((razao && razao.message) || razao || "erro");
+			});
+			window.setTimeout(function () {
+				var raiz = document.getElementById("root");
+				if (!raiz || raiz.children.length) return;
+
+				var caixa = document.createElement("div");
+				caixa.setAttribute(
+					"style",
+					"font-family:system-ui,sans-serif;padding:24px;color:#f2f7f2;background:#0b0b0b;min-height:100vh;display:flex;flex-direction:column;gap:12px;justify-content:center"
+				);
+
+				var titulo = document.createElement("h1");
+				titulo.textContent = "A app não arrancou";
+				titulo.setAttribute("style", "margin:0;font-size:20px");
+
+				var texto = document.createElement("p");
+				texto.textContent =
+					"Feche a app e abra outra vez. Se voltar a acontecer, envie o texto abaixo.";
+				texto.setAttribute("style", "margin:0;font-size:14px;opacity:.75");
+
+				var detalhe = document.createElement("pre");
+				detalhe.textContent = window.__erroApp || "(sem mensagem de erro)";
+				detalhe.setAttribute(
+					"style",
+					"margin:0;padding:12px;border-radius:12px;background:#161616;color:#ffd166;font-size:12px;white-space:pre-wrap;word-break:break-word"
+				);
+
+				var botao = document.createElement("button");
+				botao.type = "button";
+				botao.textContent = "Tentar de novo";
+				botao.setAttribute(
+					"style",
+					"align-self:flex-start;padding:12px 20px;border:0;border-radius:999px;background:#22ff44;color:#071409;font-size:14px;font-weight:700"
+				);
+				botao.onclick = function () {
+					location.reload();
+				};
+
+				caixa.appendChild(titulo);
+				caixa.appendChild(texto);
+				caixa.appendChild(detalhe);
+				caixa.appendChild(botao);
+				raiz.appendChild(caixa);
+			}, 6000);
+		</script>
+
 		<script type="module" src="/chamadas/chamadas.jsx"></script>
 	</body>
 </html>
