@@ -34,7 +34,8 @@
 /* o acento também é redefinido aqui: o inline style do contato precisa
    rederivar a rampa, não só a cor base */
 .calls,
-.call {
+.call,
+.ring {
   --accent120: color-mix(in oklch, var(--accent-base) 70%, black);
   --accent100: var(--accent-base);
   --accent80: color-mix(in oklch, var(--accent-base) 80%, white);
@@ -1174,17 +1175,256 @@ body {
   letter-spacing: 0.08em;
 }
 
-.call__actions {
+/* ---------- palco da chamada: círculos, satélites e coroa ---------- */
+
+.chamada__topo {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.palco {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 4px 0 2px;
+}
+
+/*
+  Cada círculo usa o acento do seu herói. Como a rampa (--accent100, --accent60…)
+  é resolvida no elemento que a declara, quem troca --accent-base tem de a
+  rederivar aqui — senão a bolha fica com a cor de quem está a ver a chamada.
+*/
+.palco__principal,
+.palco__satelite {
+  --accent100: var(--accent-base);
+  --accent80: color-mix(in oklch, var(--accent-base) 80%, white);
+  --accent60: color-mix(in oklch, var(--accent-base) 60%, white);
+  --accent-overlay-hover: color-mix(in oklch, var(--accent-base) 40%, transparent);
+}
+
+.palco__principal {
+  --bolha: clamp(150px, 46vw, 210px);
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+/* aro que respira com a minha voz (--nivel vem do Web Audio) */
+.palco__anel {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: var(--bolha);
+  aspect-ratio: 1;
+  transform: translateX(-50%) scale(calc(1 + var(--nivel, 0) * 0.1));
+  border: 1px solid color-mix(in oklch, var(--accent-base) 45%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 calc(16px + var(--nivel, 0) * 46px)
+    color-mix(in oklch, var(--accent-base) 34%, transparent);
+  pointer-events: none;
+  transition: transform 0.12s linear, box-shadow 0.12s linear;
+}
+
+.palco__bolha {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--bolha);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 2px solid color-mix(in oklch, var(--accent-base) 72%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 34%,
+    color-mix(in oklch, var(--accent-base) 24%, transparent),
+    #080808 74%
+  );
+  color: var(--accent100);
+  box-shadow:
+    0 0 calc(24px + var(--nivel, 0) * 40px) color-mix(in oklch, var(--accent-base) 30%, transparent),
+    inset 0 0 40px color-mix(in oklch, var(--accent-base) 16%, transparent);
+  transition: box-shadow 0.12s linear;
+}
+
+.palco__bolha > svg {
+  width: 56%;
+  height: 56%;
+}
+
+.palco__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  object-fit: cover;
+}
+
+.palco__nome {
+  margin: 0;
+  font-size: clamp(18px, 4.6vw, 23px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.palco__sub {
+  margin: 0;
+  color: var(--accent60);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+/* ponto à espera de alguém entrar */
+.palco__pulso {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent100);
+  box-shadow: 0 0 0 0 var(--accent-overlay-hover);
+  animation: room-pulse 1.8s ease-out infinite;
+}
+
+/* a tocar: anéis a abrir ao ritmo do toque */
+.palco__principal--tocar .palco__anel {
+  animation: anel-tocar 1.9s ease-out infinite;
+}
+
+.palco__principal--tocar .palco__anel::after {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 34%, transparent);
+  border-radius: 50%;
+  animation: anel-tocar 1.9s ease-out 0.65s infinite;
+}
+
+@keyframes anel-tocar {
+  0% {
+    transform: translateX(-50%) scale(0.96);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(-50%) scale(1.3);
+    opacity: 0;
+  }
+}
+
+/* os restantes participantes: bolhas em arco */
+.palco__satelites {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.palco__satelite {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(58px, 17vw, 76px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  transform: translateY(var(--desvio, 0));
+  border: 1.5px solid color-mix(in oklch, var(--accent-base) 62%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 34%,
+    color-mix(in oklch, var(--accent-base) 22%, transparent),
+    #090909 76%
+  );
+  color: var(--accent100);
+  box-shadow: 0 0 16px color-mix(in oklch, var(--accent-base) 24%, transparent);
+}
+
+.palco__satelite > svg {
+  width: 58%;
+  height: 58%;
+}
+
+.palco__satelite[data-state="failed"],
+.palco__satelite[data-state="disconnected"] {
+  border-color: #ff8f9a;
+}
+
+/* o meu vídeo, bolha pequena a flutuar */
+.palco__eu {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  width: clamp(56px, 16vw, 74px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1.5px solid var(--accent60);
+  border-radius: 50%;
+  background: #0a0a0a;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+/* coroa de bolhas: apaga-se sozinha, volta com um toque no ecrã */
+.coroa {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin-top: 22px;
-  padding: 13px 18px;
-  border-radius: 50px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
+  gap: 10px;
+  max-width: 300px;
+  margin: 14px auto 0;
+  padding: 10px 12px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.coroa[data-escondida="sim"] {
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+}
+
+/* desligar fica sempre à vista, maior e afastado da coroa */
+.call__fim {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  margin: 14px auto 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff4b4b 0%, #e01b24 100%);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(224, 27, 36, 0.45);
+  transition: transform 0.15s ease;
+}
+
+.call__fim svg {
+  width: 26px;
+  height: 26px;
+}
+
+.call__fim:hover {
+  transform: scale(1.06);
+}
+
+.call__fim:active {
+  transform: scale(0.95);
+}
+
+.call__fim:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
 }
 
 .call__btn {
@@ -2870,44 +3110,92 @@ body.mapaCheio .calls__panel {
 
 /* ---------- chamada a receber ---------- */
 
+/* tela cheia na cor de quem liga — sem cartão */
 .ring {
   position: fixed;
   inset: 0;
   z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: rgba(4, 4, 4, 0.82);
-  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px 20px 150px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      115% 70% at 50% 0%,
+      color-mix(in oklch, var(--accent-base) 26%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      85% 60% at 50% 105%,
+      color-mix(in oklch, var(--accent-base) 22%, transparent),
+      transparent 66%
+    ),
+    #060606;
+  animation: call-in 0.24s ease-out both;
 }
 
 .ring__glow {
   position: absolute;
-  width: 520px;
-  height: 520px;
+  width: min(120vw, 620px);
+  aspect-ratio: 1;
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    color-mix(in oklch, var(--accent-base) 35%, transparent),
-    transparent 65%
+    color-mix(in oklch, var(--accent-base) 32%, transparent),
+    transparent 62%
   );
-  filter: blur(20px);
-  opacity: 0.7;
+  filter: blur(26px);
+  opacity: 0.75;
   pointer-events: none;
 }
 
-.ring__card {
+/* três ondas a abrir a partir do círculo */
+.ring__ondas {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: min(72vw, 300px);
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.ring__ondas span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 55%, transparent);
+  border-radius: 50%;
+  opacity: 0;
+  animation: onda-tocar 2.4s ease-out infinite;
+}
+
+.ring__ondas span:nth-child(2) {
+  animation-delay: 0.8s;
+}
+
+.ring__ondas span:nth-child(3) {
+  animation-delay: 1.6s;
+}
+
+@keyframes onda-tocar {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+.ring__centro {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 12px;
-  width: min(100%, 380px);
-  padding: 28px 22px 22px;
-  border: 1px solid var(--accent60);
-  border-radius: 26px;
-  background: color-mix(in oklch, var(--accent-base) 8%, #0b0b0b);
+  gap: 10px;
   text-align: center;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
 }
 
 .ring__kind {
@@ -2922,35 +3210,34 @@ body.mapaCheio .calls__panel {
   position: relative;
   display: grid;
   place-items: center;
-  width: 120px;
-  height: 120px;
-  border: 1px solid var(--accent60);
+  width: clamp(120px, 38vw, 160px);
+  aspect-ratio: 1;
+  border: 2px solid color-mix(in oklch, var(--accent-base) 70%, transparent);
   border-radius: 50%;
-  background: color-mix(in oklch, var(--accent-base) 16%, #0a0a0a);
+  background: radial-gradient(
+    circle at 50% 34%,
+    color-mix(in oklch, var(--accent-base) 30%, transparent),
+    #0a0a0a 72%
+  );
   color: var(--accent100);
+  box-shadow:
+    0 0 70px color-mix(in oklch, var(--accent-base) 40%, transparent),
+    inset 0 0 40px color-mix(in oklch, var(--accent-base) 20%, transparent);
+  animation: avatar-pulsa 1.7s ease-in-out infinite;
 }
 
 .ring__avatar svg {
-  width: 62%;
-  height: 62%;
+  width: 58%;
+  height: 58%;
 }
 
-.ring__pulse {
-  position: absolute;
-  inset: -12px;
-  border: 2px solid var(--accent80);
-  border-radius: 50%;
-  animation: ring-pulse 1.6s ease-out infinite;
-}
-
-@keyframes ring-pulse {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.9;
-  }
+@keyframes avatar-pulsa {
+  0%,
   100% {
-    transform: scale(1.35);
-    opacity: 0;
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
   }
 }
 
@@ -2989,21 +3276,98 @@ body.mapaCheio .calls__panel {
   opacity: 0.7;
 }
 
+/* atender e recusar nas pontas, como nos telefones da série */
 .ring__actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 42px;
   display: flex;
-  gap: 22px;
-  margin-top: 8px;
+  align-items: flex-start;
+  justify-content: space-evenly;
+  padding: 0 34px;
 }
 
-.ring__actions .call__btn {
-  width: 92px;
+.ring__btn {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.ring__actions .call__btn--answer svg,
-.ring__actions .call__btn--end svg {
-  width: 26px;
-  height: 26px;
-  padding: 16px;
+.ring__btnIcone {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  color: #fff;
+  transition: transform 0.15s ease;
+}
+
+.ring__btnIcone svg {
+  width: 30px;
+  height: 30px;
+}
+
+.ring__btnTexto {
+  color: var(--text-light);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+}
+
+.ring__btn--recusar .ring__btnIcone {
+  background: linear-gradient(135deg, #ff4b4b 0%, #e01b24 100%);
+  box-shadow: 0 12px 30px rgba(224, 27, 36, 0.45);
+}
+
+.ring__btn--atender .ring__btnIcone {
+  background: linear-gradient(135deg, #8ce02c 0%, #3fa30f 100%);
+  box-shadow: 0 12px 30px rgba(63, 163, 15, 0.45);
+  animation: atender-pulsa 1.5s ease-out infinite;
+}
+
+.ring__btn:hover .ring__btnIcone {
+  transform: scale(1.07);
+}
+
+.ring__btn:active .ring__btnIcone {
+  transform: scale(0.95);
+}
+
+/* o anel de foco do sistema estragava o círculo: fica só à volta do ícone */
+.ring__btn:focus,
+.ring__btn:focus-visible {
+  outline: none;
+}
+
+.ring__btn:focus-visible .ring__btnIcone {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+
+@keyframes atender-pulsa {
+  0% {
+    box-shadow:
+      0 12px 30px rgba(63, 163, 15, 0.45),
+      0 0 0 0 rgba(140, 224, 44, 0.55);
+  }
+  70% {
+    box-shadow:
+      0 12px 30px rgba(63, 163, 15, 0.45),
+      0 0 0 18px rgba(140, 224, 44, 0);
+  }
+  100% {
+    box-shadow:
+      0 12px 30px rgba(63, 163, 15, 0.45),
+      0 0 0 0 rgba(140, 224, 44, 0);
+  }
 }
 
 /* ---------- quem entra na chamada a todos ---------- */
@@ -3115,12 +3479,11 @@ body.mapaCheio .calls__panel {
     grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
 
-  /* barra de controles da chamada */
-  .call__actions {
-    gap: 10px;
-    padding: 10px 12px;
-    max-width: 304px;
-    margin-inline: auto;
+  /* coroa de controles da chamada */
+  .coroa {
+    gap: 8px;
+    padding: 9px 10px;
+    max-width: 276px;
   }
 
   .call__btn svg {
@@ -3129,38 +3492,38 @@ body.mapaCheio .calls__panel {
     padding: 13px;
   }
 
-  /* chamada a receber: botões lado a lado e maiores */
-  .ring__actions {
-    gap: 16px;
+  /* chamada a receber: botões nas pontas, um pouco menores */
+  .ring__btnIcone {
+    width: 66px;
+    height: 66px;
   }
 
-  .ring__actions .call__btn {
-    width: 86px;
-    font-size: 11px;
-  }
-
-  .ring__actions .call__btn svg {
-    width: 24px;
-    height: 24px;
-    padding: 14px;
+  .ring__btnIcone svg {
+    width: 27px;
+    height: 27px;
   }
 }
 
 @media (max-width: 520px) {
-  .ring__actions .call__btn {
-    width: 78px;
+  .ring__btnIcone {
+    width: 60px;
+    height: 60px;
   }
 
-  .ring__actions .call__btn svg {
-    width: 24px;
-    height: 24px;
-    padding: 14px;
+  .ring__btnIcone svg {
+    width: 25px;
+    height: 25px;
   }
 
-  .call__actions {
-    gap: 8px;
-    padding: 9px 10px;
-    max-width: 262px;
+  .coroa {
+    gap: 7px;
+    padding: 8px 9px;
+    max-width: 250px;
+  }
+
+  .call__fim {
+    width: 58px;
+    height: 58px;
   }
 
   .call__btn svg {

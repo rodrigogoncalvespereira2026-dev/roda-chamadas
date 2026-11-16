@@ -1,9 +1,10 @@
 {
-  "versao": "1.28",
-  "codigo": 29,
+  "versao": "1.29",
+  "codigo": 30,
   "novidades": [
-    "Corrige o ecrã preto ao abrir em WebView antigo: o código baixou para sintaxe de 2017",
-    "A app abre mesmo sem acesso ao Google Fonts",
-    "Se não arrancar, mostra o erro no ecrã em vez de ficar em branco"
+    "A chamada ganhou o desenho da série: um círculo grande, com o aro a respirar ao ritmo da sua voz",
+    "Os outros participantes aparecem em círculos mais pequenos, lado a lado, na cor de cada herói",
+    "Os controles aparecem com um toque no ecrã e escondem-se sozinhos; desligar fica sempre à vista",
+    "A chamada a receber toma conta do ecrã, com ondas a abrir e botões redondos para atender ou recusar"
   ]
 }

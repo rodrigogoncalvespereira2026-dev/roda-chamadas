@@ -15,14 +15,90 @@ import {
 } from "./icons";
 
 /**
- * Ecrã da chamada: vídeo de quem está do outro lado, o meu em miniatura e os
- * controles. Quem está só em voz (ou sem câmera) aparece com o avatar do herói.
+ * Ecrã da chamada, no desenho do comunicador do desenho animado:
+ *
+ *  - a pessoa do outro lado aparece dentro de um círculo com aro luminoso, e as
+ *    restantes em bolhas menores em arco por baixo (satélites);
+ *  - o meu vídeo é um círculo pequeno a flutuar no canto;
+ *  - os controlos são uma coroa de bolhas que se apaga sozinha depois de alguns
+ *    segundos — no desenho não há botões à vista — e volta com um toque;
+ *  - o aro do círculo respira com o nível da minha voz (Web Audio).
  */
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+}
+
+/**
+ * Nível da minha voz, escrito direto no estilo do painel (--nivel, 0 a 1).
+ *
+ * Não passa por estado do React de propósito: a 60 leituras por segundo um
+ * setState obrigaria a redesenhar a chamada inteira sem necessidade.
+ */
+function useNivel(stream, ativo, alvo) {
+  useEffect(() => {
+    const painel = alvo.current;
+
+    if (!ativo || !stream) {
+      painel?.style.setProperty("--nivel", "0");
+      return undefined;
+    }
+
+    const Contexto = window.AudioContext ?? window.webkitAudioContext;
+    if (!Contexto) return undefined;
+
+    let contexto;
+    let analisador;
+    let fonte;
+    let pedido;
+
+    try {
+      contexto = new Contexto();
+      analisador = contexto.createAnalyser();
+      analisador.fftSize = 512;
+      analisador.smoothingTimeConstant = 0.8;
+      fonte = contexto.createMediaStreamSource(stream);
+      fonte.connect(analisador);
+      contexto.resume?.().catch(() => {});
+    } catch {
+      painel?.style.setProperty("--nivel", "0");
+      contexto?.close?.().catch(() => {});
+      return undefined;
+    }
+
+    const dados = new Uint8Array(analisador.frequencyBinCount);
+
+    const medir = () => {
+      analisador.getByteTimeDomainData(dados);
+
+      let soma = 0;
+      for (let i = 0; i < dados.length; i += 1) {
+        const amostra = (dados[i] - 128) / 128;
+        soma += amostra * amostra;
+      }
+
+      const rms = Math.sqrt(soma / dados.length);
+      const nivel = Math.min(1, rms * 5.5);
+
+      painel?.style.setProperty("--nivel", nivel.toFixed(2));
+      pedido = requestAnimationFrame(medir);
+    };
+
+    medir();
+
+    return () => {
+      cancelAnimationFrame(pedido);
+      try {
+        fonte?.disconnect();
+        contexto?.close?.().catch(() => {});
+      } catch {
+        /* o contexto já fechou */
+      }
+      painel?.style.setProperty("--nivel", "0");
+    };
+  }, [stream, ativo, alvo]);
 }
 
 /*
@@ -51,11 +127,12 @@ function PlayGlyph() {
 function Stream({ stream, muted, className, onImagem }) {
   const ref = useRef(null);
   /* O iPhone começa com o vídeo parado à espera de um toque: enquanto isso,
-     o quadrado preto ganha um botão em vez de ficar mudo e sem explicação. */
+     o círculo preto ganha um botão em vez de ficar mudo e sem explicação. */
   const [parado, setParado] = useState(true);
   const temVideo = Boolean(stream?.getVideoTracks?.().length);
 
-  const tocar = () => {
+  const tocar = (evento) => {
+    evento?.stopPropagation?.();
     ref.current?.play?.().catch(() => {});
   };
 
@@ -149,6 +226,9 @@ const PEER_STATE = {
   closed: "saiu",
 };
 
+/* quantos segundos os controles ficam à vista depois do último toque */
+const ESPERA_CONTROLES = 4200;
+
 export default function CallScreen({
   call,
   peers = [],
@@ -161,6 +241,7 @@ export default function CallScreen({
   elapsed,
   unread = 0,
   chatOpen = false,
+  eu,
   onMute,
   onCamera,
   onFlip,
@@ -178,60 +259,147 @@ export default function CallScreen({
   /* Botões extra da barra: mudam de estado no aparelho. */
   const [extra, setExtra] = useState({ ecra: false, mao: false, altifalante: false, efeitos: false });
   const alternarExtra = (chave) => setExtra((atual) => ({ ...atual, [chave]: !atual[chave] }));
-  const status = ringing ? "Chamando…" : formatTime(elapsed);
+
+  const painel = useRef(null);
+  /* Controlos à vista? No desenho só aparecem quando se toca no ecrã. */
+  const [mostrar, setMostrar] = useState(true);
+  const [toques, setToques] = useState(0);
+
+  const acordar = () => {
+    setMostrar(true);
+    setToques((n) => n + 1);
+  };
+
+  useNivel(local, !ringing && !muted, painel);
+
+  /* apaga a coroa sozinha; cada toque recomeça a contagem */
+  useEffect(() => {
+    if (ringing || !mostrar) return undefined;
+
+    const tempo = setTimeout(() => setMostrar(false), ESPERA_CONTROLES);
+
+    return () => clearTimeout(tempo);
+  }, [ringing, mostrar, toques]);
+
+  const principal = peers[0] ?? null;
+  const satelites = peers.slice(1);
+  const alvo = ringing
+    ? (call.targets?.[0] ?? call.members.find((membro) => membro.hero !== eu) ?? null)
+    : null;
+  const status = ringing ? "a chamar…" : formatTime(elapsed);
 
   return (
-    <div className="call call--panel" data-phase={ringing ? "ringing" : "active"} style={{ "--accent-base": accent }}>
+    <div
+      ref={painel}
+      className="call call--panel"
+      data-phase={ringing ? "ringing" : "active"}
+      data-controls={mostrar ? "on" : "off"}
+      style={{ "--accent-base": accent }}
+      onPointerDown={acordar}
+    >
       <div className="call__glow" aria-hidden="true" />
 
-      <p className="call__badge">
-        {call.kind === "video" ? "Videochamada" : "Chamada de voz"} ·{" "}
-        {call.members.length} no canal
-      </p>
+      <header className="chamada__topo">
+        <p className="call__badge">
+          {call.kind === "video" ? "Videochamada" : "Chamada de voz"} ·{" "}
+          {call.members.length} no canal
+        </p>
 
-      <p className="call__status" role="status" aria-live="polite">
-        {status}
-      </p>
+        <p className="call__status" role="status" aria-live="polite">
+          {status}
+        </p>
+      </header>
 
-      <div className="room">
-        {peers.map((peer) => (
+      <div className="palco">
+        {ringing ? (
           <div
-            key={peer.name}
-            className="room__tile"
-            data-state={peer.state}
-            style={{ "--accent-base": themeById(peer.hero).accent }}
+            className="palco__principal palco__principal--tocar"
+            style={{ "--accent-base": themeById(alvo?.hero ?? "cat").accent }}
           >
-            {peer.hasVideo ? (
-              <Stream stream={peer.stream} className="room__video" />
-            ) : (
-              <div className="room__avatar" aria-hidden="true">
-                <ThemeIcon id={peer.hero} />
-              </div>
+            <span className="palco__anel" aria-hidden="true" />
+
+            <div className="palco__bolha">
+              {alvo ? <ThemeIcon id={alvo.hero} /> : <PhoneCallIcon />}
+            </div>
+
+            <p className="palco__nome">{alvo?.name ?? "a chamar"}</p>
+            <p className="palco__sub">
+              {call.kind === "video" ? "a chamar por vídeo" : "a chamar por voz"}
+            </p>
+          </div>
+        ) : principal ? (
+          <div
+            className="palco__principal"
+            data-state={principal.state}
+            style={{ "--accent-base": themeById(principal.hero).accent }}
+          >
+            <span className="palco__anel" aria-hidden="true" />
+
+            <div className="palco__bolha">
+              {principal.hasVideo ? (
+                <Stream stream={principal.stream} className="palco__video" />
+              ) : (
+                <ThemeIcon id={principal.hero} />
+              )}
+            </div>
+
+            <p className="palco__nome">{themeById(principal.hero).name}</p>
+
+            {principal.hasVideo ? null : (
+              <p className="palco__sub">{PEER_STATE[principal.state] ?? "no canal"}</p>
             )}
-
-            <span className="room__tag">
-              {themeById(peer.hero).name}
-              {!peer.hasVideo ? ` · ${PEER_STATE[peer.state] ?? "no canal"}` : ""}
-            </span>
           </div>
-        ))}
+        ) : (
+          <div className="palco__principal palco__principal--espera">
+            <span className="palco__anel" aria-hidden="true" />
 
-        {!peers.length ? (
-          <div className="room__wait">
-            <span className="room__pulse" aria-hidden="true" />
-            <p>{ringing ? "A tocar…" : "Esperando o outro lado entrar no canal…"}</p>
+            <div className="palco__bolha">
+              <span className="palco__pulso" aria-hidden="true" />
+            </div>
+
+            <p className="palco__nome">{ringing ? "a chamar" : "no canal"}</p>
+            <p className="palco__sub">
+              {ringing ? "A tocar…" : "Esperando o outro lado entrar no canal…"}
+            </p>
           </div>
+        )}
+
+        {satelites.length ? (
+          <ul className="palco__satelites" aria-label="Outros participantes">
+            {satelites.map((peer, indice) => {
+              /* arco suave: as pontas descem, o meio fica mais alto */
+              const desvio = indice - (satelites.length - 1) / 2;
+
+              return (
+                <li
+                  key={peer.name}
+                  className="palco__satelite"
+                  data-state={peer.state}
+                  style={{
+                    "--accent-base": themeById(peer.hero).accent,
+                    "--desvio": `${Math.abs(desvio) * 7}px`,
+                  }}
+                  title={`${themeById(peer.hero).name} · ${PEER_STATE[peer.state] ?? "no canal"}`}
+                >
+                  {peer.hasVideo ? (
+                    <Stream stream={peer.stream} className="palco__video" />
+                  ) : (
+                    <ThemeIcon id={peer.hero} />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         ) : null}
 
         {localVideo ? (
-          <div className="room__self">
+          <div className="palco__eu" aria-label="O seu vídeo">
             <Stream
               stream={local}
               muted
-              className={`room__video${facing === "user" ? " room__video--espelho" : ""}`}
+              className={`palco__video${facing === "user" ? " room__video--espelho" : ""}`}
               onImagem={setLarguraLocal}
             />
-            <span className="room__tag">você</span>
           </div>
         ) : null}
       </div>
@@ -241,8 +409,7 @@ export default function CallScreen({
       {localVideo && larguraLocal === 0 && elapsed > 3 ? (
         <div className="call__aviso">
           <p className="calls__notice">
-            A câmera não está a enviar imagem. Feche os outros apps que usam a câmera e
-tente
+            A câmera não está a enviar imagem. Feche os outros apps que usam a câmera e tente
             reiniciá-la; se continuar, confira a permissão nas definições do site.
           </p>
           <button type="button" className="call__avisoBtn" onClick={onFixCamera}>
@@ -251,19 +418,8 @@ tente
         </div>
       ) : null}
 
-      <div className="call__actions">
-        {ringing ? (
-          <button
-            type="button"
-            className="call__btn call__btn--end"
-            onClick={onEnd}
-            autoFocus
-            title="Cancelar a chamada"
-            aria-label="Cancelar a chamada"
-          >
-            <PhoneCallIcon down />
-          </button>
-        ) : (
+      <div className="coroa" data-escondida={mostrar ? "nao" : "sim"} inert={mostrar ? undefined : ""}>
+        {ringing ? null : (
           <>
             <button
               type="button"
@@ -342,7 +498,7 @@ tente
               className="call__btn call__btn--fx"
               aria-pressed={extra.efeitos}
               onClick={() => alternarExtra("efeitos")}
-              aria-label="Efeitos de câmara"
+              aria-label="Efeitos de câmera"
               title="Efeitos de câmera"
             >
               <EffectsIcon />
@@ -369,19 +525,21 @@ tente
             >
               <PinIcon />
             </button>
-
-            <button
-              type="button"
-              className="call__btn call__btn--end"
-              onClick={onEnd}
-              aria-label="Encerrar a chamada"
-              title="Encerrar"
-            >
-              <PhoneCallIcon down />
-            </button>
           </>
         )}
       </div>
+
+      {/* desligar nunca se esconde: é a saída da chamada */}
+      <button
+        type="button"
+        className="call__fim"
+        onClick={onEnd}
+        autoFocus={ringing}
+        title={ringing ? "Cancelar a chamada" : "Encerrar a chamada"}
+        aria-label={ringing ? "Cancelar a chamada" : "Encerrar a chamada"}
+      >
+        <PhoneCallIcon down />
+      </button>
     </div>
   );
 }

@@ -1,4 +1,10 @@
 {
+  "30": [
+    "A chamada ganhou o desenho da série: um círculo grande, com o aro a respirar ao ritmo da sua voz",
+    "Os outros participantes aparecem em círculos mais pequenos, lado a lado, na cor de cada herói",
+    "Os controles aparecem com um toque no ecrã e escondem-se sozinhos; desligar fica sempre à vista",
+    "A chamada a receber toma conta do ecrã, com ondas a abrir e botões redondos para atender ou recusar"
+  ],
   "29": [
     "Corrige o ecrã preto ao abrir em WebView antigo: o código baixou para sintaxe de 2017",
     "A app abre mesmo sem acesso ao Google Fonts",

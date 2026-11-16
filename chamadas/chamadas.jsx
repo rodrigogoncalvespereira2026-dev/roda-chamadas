@@ -384,6 +384,8 @@ function CallsApp() {
           kind: data.kind,
           phase: "ringing",
           members: data.members,
+          /* quem está a ser chamado: é o rosto que a chamada mostra */
+          targets: data.targets ?? [],
           place: data.place,
           connectedAt: null,
         });
@@ -1038,6 +1040,7 @@ function CallsApp() {
               ringing={call.phase === "ringing"}
               elapsed={elapsed}
               unread={totalUnread}
+              eu={me?.hero ?? identity?.hero}
               onMute={() => sessionRef.current?.setMuted(!(view?.muted ?? false))}
               onCamera={() => sessionRef.current?.setCamera(!(view?.camera ?? false))}
               onFlip={() => sessionRef.current?.flipCamera()}
