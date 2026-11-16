@@ -1,9 +1,8 @@
 {
-  "versao": "1.32",
-  "codigo": 33,
+  "versao": "1.33",
+  "codigo": 34,
   "novidades": [
-    "O aviso de chamada passou a ter canal próprio de alta prioridade, para vibrar sempre",
-    "Com a app em segundo plano ou o ecrã bloqueado, o telemóvel vibra e mostra na tela quem está a chamar",
-    "A notificação traz o nome de quem liga e sai quando atende ou recusa"
+    "A barra com Roda, Contatos, Recados, Canal e Mapa voltou, agora fixa no fundo do ecrã",
+    "O aviso de chamada continua a vibrar e a mostrar quem liga com a app fora do ecrã"
   ]
 }

@@ -74,6 +74,14 @@ function formatTime(seconds) {
 }
 
 
+const TABS = [
+  { id: "roda", label: "Roda", Icon: WheelTabIcon },
+  { id: "contatos", label: "Contatos", Icon: UsersIcon },
+  { id: "recados", label: "Recados", Icon: ChatTabIcon },
+  { id: "canal", label: "Canal", Icon: PhoneIcon },
+  { id: "mapa", label: "Mapa", Icon: MapTabIcon },
+];
+
 const REASON_TEXT = {
   ended: "Chamada encerrada.",
   left: "A outra pessoa saiu da chamada.",
@@ -656,6 +664,24 @@ function CallsApp() {
 
   /* ---------- abas ---------- */
 
+  /* ---------- abas ---------- */
+
+  const onTabKeyDown = (event) => {
+    const index = TABS.findIndex((item) => item.id === tab);
+    let next = null;
+
+    if (event.key === "ArrowRight") next = (index + 1) % TABS.length;
+    else if (event.key === "ArrowLeft") next = (index - 1 + TABS.length) % TABS.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = TABS.length - 1;
+
+    if (next === null) return;
+
+    event.preventDefault();
+    setTab(TABS[next].id);
+    document.getElementById(`aba-${TABS[next].id}`)?.focus();
+  };
+
   /* ---------- telas ---------- */
 
   if (instalando) {
@@ -684,9 +710,24 @@ function CallsApp() {
   const invite = incoming[0] ?? null;
   const callMembers = call?.members ?? [];
 
+  const tabBadge = (id) => {
+    if (id === "recados") return totalUnread ? String(totalUnread) : "";
+    if (id === "canal") {
+      return call ? (call.phase === "ringing" ? "…" : String(callMembers.length)) : "";
+    }
+    return "";
+  };
+
   return (
     <main
-      className={definicoes ? "calls calls--settings" : "calls calls--roda"}
+      className={[
+        "calls",
+        definicoes
+          ? "calls--settings"
+          : !call && !escolhido && tab === "roda"
+            ? "calls--roda"
+            : "calls--barra",
+      ].join(" ")}
       style={{ "--accent-base": accent }}
     >
       <header className="calls__head">
@@ -770,8 +811,14 @@ function CallsApp() {
         ) : null}
       </header>
 
-      {!definicoes && !call && !escolhido ? (
-        <section className="calls__panel calls__panel--roda" id="painel-roda" aria-label="Heróis na roda">
+      {!definicoes && !call && !escolhido && tab === "roda" ? (
+        <section
+          className="calls__panel calls__panel--roda"
+          role="tabpanel"
+          id="painel-roda"
+          aria-labelledby="aba-roda"
+          tabIndex={0}
+        >
           <div className="calls__wheelBox">
             <ThemeWheel
               themes={wheelThemes}
@@ -842,6 +889,146 @@ function CallsApp() {
         />
       ) : null}
 
+
+      {!definicoes && !call && tab === "contatos" ? (
+        <section
+          className="calls__panel"
+          role="tabpanel"
+          id="painel-contatos"
+          aria-labelledby="aba-contatos"
+          tabIndex={0}
+        >
+          <ContactsPanel
+            people={others}
+            busy={Boolean(call)}
+            onFocus={(hero) => {
+              setFocusHero(hero);
+              setTab("roda");
+            }}
+            onCall={(hero) => startCall([hero], kind)}
+          />
+        </section>
+      ) : null}
+
+      {!definicoes && !call && tab === "recados" ? (
+        <section
+          className="calls__panel"
+          role="tabpanel"
+          id="painel-recados"
+          aria-labelledby="aba-recados"
+          tabIndex={0}
+        >
+          <ChatPanel
+            people={others}
+            threads={threads}
+            unread={unread}
+            chatHero={chatHero}
+            onOpen={openChat}
+            onSend={sendMessage}
+          />
+        </section>
+      ) : null}
+
+      {!definicoes && !call && tab === "canal" ? (
+        <section
+          className="calls__panel"
+          role="tabpanel"
+          id="painel-canal"
+          aria-labelledby="aba-canal"
+          tabIndex={0}
+        >
+          <div className="calls__idle">
+            <span className="calls__idleIcon" aria-hidden="true">
+              <PhoneIcon />
+            </span>
+            <h2>Nenhum canal aberto</h2>
+            <p>
+              {focus
+                ? `Na frente da roda: ${focus.name} (${STATUS_LABEL[focus.status]}).`
+                : "Gire a roda para escolher quem chamar."}
+            </p>
+
+            <button
+              type="button"
+              className="calls__callBtn"
+              onClick={() => focus && startCall([focus.hero], kind)}
+              disabled={!focus || focus.hero === identity.hero}
+            >
+              <PhoneIcon />
+              Abrir canal
+            </button>
+
+            {notice ? (
+              <p className="calls__notice" role="status">
+                {notice}
+              </p>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {!definicoes && !call && tab === "mapa" ? (
+        <section
+          className="calls__panel"
+          role="tabpanel"
+          id="painel-mapa"
+          aria-labelledby="aba-mapa"
+          tabIndex={0}
+        >
+          <MapPanel
+            people={others}
+            places={places}
+            myPlace={myPlace}
+            locating={locating}
+            geoError={geoError}
+            onLocate={locate}
+          />
+        </section>
+      ) : null}
+
+      {!definicoes && !escolhido ? (
+        <div
+          className="calls__tabs calls__tabs--fundo"
+          role="tablist"
+          aria-label="Seções do comunicador"
+          onKeyDown={onTabKeyDown}
+        >
+          <div className="calls__tabsInner">
+            <span
+              className="calls__tabGlow"
+              aria-hidden="true"
+              style={{ "--ativo": Math.max(0, TABS.findIndex((item) => item.id === tab)) }}
+            />
+
+            {TABS.map(({ id, label, Icon }) => {
+              const active = tab === id;
+              const badge = tabBadge(id);
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  id={`aba-${id}`}
+                  className="calls__tab"
+                  aria-selected={active}
+                  aria-controls={`painel-${id}`}
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setTab(id)}
+                >
+                  <Icon />
+                  <span>{label}</span>
+                  {badge ? (
+                    <span className="calls__tabBadge" aria-hidden="true">
+                      {badge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {invite ? (
         <IncomingCall
