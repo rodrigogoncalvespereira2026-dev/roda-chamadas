@@ -12,6 +12,7 @@ import ContactsPanel from "./ContactsPanel";
 import MapPanel from "./MapPanel";
 import { CallSession } from "./calls";
 import { avisarChamada, cancelarAviso, foraDoEcra, prepararAvisos } from "./avisos";
+import { acordarSom, pararToque, tocarToque } from "./som";
 import { createRealtime } from "./realtime";
 import { readPosition } from "./geo";
 import { sessao } from "./armazem";
@@ -533,6 +534,25 @@ function CallsApp() {
   useEffect(() => {
     prepararAvisos();
   }, []);
+
+  /* O primeiro toque no ecrã acorda o áudio: os navegadores só deixam tocar
+     depois de um gesto, e o toque que abre a app já serve. */
+  useEffect(() => {
+    const acordar = () => acordarSom();
+    window.addEventListener("pointerdown", acordar, { once: true });
+    return () => window.removeEventListener("pointerdown", acordar);
+  }, []);
+
+  /* Enquanto a chamada toca há som: sinal de chamada para quem liga e toque
+     do comunicador para quem recebe. */
+  useEffect(() => {
+    if (incoming.length) tocarToque("aReceber");
+    else if (call && call.phase === "ringing") tocarToque("aChamar");
+    else pararToque();
+  }, [incoming, call]);
+
+  /* ao sair da app, nada fica a tocar */
+  useEffect(() => pararToque, []);
 
   /* Só o APK tem versão para comparar: o site é sempre o que está no servidor. */
   useEffect(() => {
