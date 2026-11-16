@@ -11,6 +11,7 @@ import ChatPanel from "./ChatPanel";
 import ContactsPanel from "./ContactsPanel";
 import MapPanel from "./MapPanel";
 import { CallSession } from "./calls";
+import { avisarChamada, cancelarAviso, foraDoEcra, prepararAvisos } from "./avisos";
 import { createRealtime } from "./realtime";
 import { readPosition } from "./geo";
 import { sessao } from "./armazem";
@@ -291,6 +292,7 @@ function CallsApp() {
   const acceptInvite = useCallback(
     (invite) => {
       rtRef.current.send("accept", { callId: invite.callId });
+      cancelarAviso(invite.callId);
       setIncoming((current) => current.filter((item) => item.callId !== invite.callId));
       if (invite.place) {
         setPlaces((current) => ({ ...current, [invite.from.hero]: invite.place }));
@@ -303,6 +305,7 @@ function CallsApp() {
   const rejectInvite = useCallback(
     (invite) => {
       rtRef.current.send("reject", { callId: invite.callId });
+      cancelarAviso(invite.callId);
       setIncoming((current) => current.filter((item) => item.callId !== invite.callId));
       vibrate(0);
     },
@@ -401,6 +404,10 @@ function CallsApp() {
         }
         vibrate([320, 180, 320, 180, 320]);
         notify(data);
+
+        // com a app fora do ecrã não há onde mostrar quem liga: o telemóvel
+        // vibra e a notificação diz o nome de quem está a chamar
+        if (foraDoEcra()) avisarChamada(data);
       })
     );
 
@@ -453,6 +460,7 @@ function CallsApp() {
 
     offs.push(
       rt.on("call-ended", ({ callId, reason, by }) => {
+        cancelarAviso(callId);
         setIncoming((current) => current.filter((item) => item.callId !== callId));
 
         const current = callRef.current;
@@ -512,6 +520,11 @@ function CallsApp() {
 
     return () => offs.forEach((off) => off());
   }, [appendMessage, closeSession, notify, openSession, vibrate]);
+
+  /* No APK, deixa o canal de avisos e a permissão prontos desde o arranque. */
+  useEffect(() => {
+    prepararAvisos();
+  }, []);
 
   /* Só o APK tem versão para comparar: o site é sempre o que está no servidor. */
   useEffect(() => {

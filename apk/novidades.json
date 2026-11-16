@@ -1,4 +1,9 @@
 {
+  "32": [
+    "Com a app em segundo plano ou o ecrã bloqueado, o telemóvel vibra e mostra na tela quem está a chamar",
+    "A notificação traz o nome de quem liga e sai quando atende ou recusa",
+    "A permissão de notificações é pedida na primeira vez que a app abre"
+  ],
   "31": [
     "A app passou a ser só a roda: entra, gira com o dedo e toca no círculo da frente para ligar",
     "Ao escolher um herói, todos os outros círculos desaparecem e fica só o escolhido, a chamar",
