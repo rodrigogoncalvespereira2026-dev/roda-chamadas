@@ -253,6 +253,36 @@ export function ShrinkIcon(props) {
   );
 }
 
+/** Rota (seta de itinerário). */
+export function RouteIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="6" cy="18" r="2.4" />
+      <circle cx="18" cy="6" r="2.4" />
+      <path d="M8.4 18H13a3.5 3.5 0 0 0 0-7H9.5a3.5 3.5 0 0 1 0-7h6.1" />
+    </svg>
+  );
+}
+
+/** Guardar lugar (marcador). */
+export function BookmarkIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" />
+    </svg>
+  );
+}
+
+/** Copiar. */
+export function CopyIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M15 6.5V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h1.5" />
+    </svg>
+  );
+}
+
 /** Mão levantada. */
 export function HandIcon(props) {
   return (

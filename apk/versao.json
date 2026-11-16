@@ -1,10 +1,9 @@
 {
-  "versao": "1.25",
-  "codigo": 26,
+  "versao": "1.26",
+  "codigo": 27,
   "novidades": [
-    "Mapa com três vistas: satélite, híbrido e ruas",
-    "Procura de ruas, cidades e lugares no mapa",
-    "Régua para medir distâncias e modo de ecrã inteiro",
-    "Escala métrica e distância de cada contato na lista"
+    "Rota pelas ruas até um contato ou um lugar, com distância e tempo de carro",
+    "Guarda lugares no mapa: ficam no seu aparelho e aparecem com alfinete",
+    "Copiar ou partilhar um link com a sua posição"
   ]
 }

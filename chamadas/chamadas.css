@@ -752,6 +752,13 @@ body {
   text-align: center;
 }
 
+/* ícone dentro do texto de ajuda, na linha do texto */
+.calls__hint svg {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
 /* ---------- contatos ---------- */
 
 .calls__list {
@@ -1843,6 +1850,210 @@ body.mapaCheio .calls__panel {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* a linha virou caixa: o botão principal e a seta de rota ao lado */
+.map__row {
+  gap: 6px;
+  padding: 4px 6px 4px 12px;
+  cursor: default;
+}
+
+.map__rowMain {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map__rowMain:focus-visible {
+  outline: 2px solid var(--accent80);
+  outline-offset: 2px;
+}
+
+.map__rowRota {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent80);
+  cursor: pointer;
+}
+
+.map__rowRota svg {
+  width: 15px;
+  height: 15px;
+}
+
+.map__rowRota:hover {
+  border-color: var(--accent-base);
+  background: color-mix(in oklch, var(--accent-base) 14%, transparent);
+}
+
+.map__rowRota:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.map__rowRota--apagar {
+  color: var(--text-muted);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.map__row--lugar .map__rowIcon {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--accent80);
+}
+
+.map__row--lugar .map__rowIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* linha da sua posição com o botão de copiar */
+.map__locateLinha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.map__locateLinha .map__locate {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.map__copiar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent80);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map__copiar svg {
+  width: 13px;
+  height: 13px;
+}
+
+.map__achadoRota {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent80);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.map__achadoRota svg {
+  width: 14px;
+  height: 14px;
+}
+
+.map__aviso {
+  margin: 0;
+  color: #ffb4a2;
+  font-size: 12px;
+}
+
+.map__guardar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map__guardar .calls__search {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* rota ativa */
+.map__rota {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 20px);
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.85);
+  color: var(--text-light);
+  font-size: 11.5px;
+  font-weight: 600;
+  transform: translateX(-50%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.map__rota svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--accent80);
+}
+
+.map__rota span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map__rota button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent80);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.map__medida--acima {
+  bottom: 52px;
+}
+
+.mapPin__lugar {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #ffd166;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+  transform: rotate(-45deg);
 }
 
 @media (prefers-reduced-motion: reduce) {

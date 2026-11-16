@@ -4,7 +4,16 @@ import "leaflet/dist/leaflet.css";
 import ThemeIcon from "../carrossel/ThemeIcon";
 import { themeById } from "../carrossel/themes";
 import { distanceKm, formatKm } from "./geo";
-import { ExpandIcon, PinIcon, RulerIcon, ShrinkIcon, TargetIcon } from "./icons";
+import {
+  BookmarkIcon,
+  CopyIcon,
+  ExpandIcon,
+  PinIcon,
+  RouteIcon,
+  RulerIcon,
+  ShrinkIcon,
+  TargetIcon,
+} from "./icons";
 import { statusLabel } from "./status";
 
 /**
@@ -66,6 +75,49 @@ const ICONE_BUSCA = L.divIcon({
   iconAnchor: [13, 13],
 });
 
+const ICONE_LUGAR = L.divIcon({
+  className: "mapPin mapPin--lugar",
+  html: '<span class="mapPin__lugar"></span>',
+  iconSize: [24, 24],
+  iconAnchor: [12, 22],
+});
+
+/* OSRM público: rotas pelas ruas, com tempo estimado de carro */
+const ROTAS = "https://router.project-osrm.org/route/v1/driving";
+
+const CHAVE_LUGARES = "roda:lugares";
+
+function lerLugares() {
+  try {
+    const guardados = JSON.parse(localStorage.getItem(CHAVE_LUGARES) ?? "[]");
+
+    return Array.isArray(guardados)
+      ? guardados.filter((lugar) => lugar && typeof lugar.lat === "number")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function gravarLugares(lista) {
+  try {
+    localStorage.setItem(CHAVE_LUGARES, JSON.stringify(lista.slice(0, 20)));
+  } catch {
+    /* sem armazenamento (aba privada): a lista vale só enquanto a aba viver */
+  }
+}
+
+/** "12 min" ou "1 h 05". */
+function formatMinutos(minutos) {
+  const total = Math.max(1, Math.round(minutos));
+  if (total < 60) return `${total} min`;
+
+  const horas = Math.floor(total / 60);
+  const resto = total % 60;
+
+  return `${horas} h ${String(resto).padStart(2, "0")}`;
+}
+
 export default function MapPanel({
   people,
   places = {},
@@ -80,6 +132,8 @@ export default function MapPanel({
   const baseCamadas = useRef([]);
   const reguaCamada = useRef(null);
   const buscaCamada = useRef(null);
+  const rotaCamada = useRef(null);
+  const lugaresCamada = useRef(null);
   const reguaLigada = useRef(false);
 
   const [base, setBase] = useState("satelite");
@@ -89,6 +143,14 @@ export default function MapPanel({
   const [procurar, setProcurar] = useState("");
   const [aProcurar, setAProcurar] = useState(false);
   const [achado, setAchado] = useState("");
+  const [achadoLugar, setAchadoLugar] = useState(null);
+  const [rota, setRota] = useState(null);
+  const [aRotar, setARotar] = useState(false);
+  const [aviso, setAviso] = useState("");
+  const [lugares, setLugares] = useState(lerLugares);
+  const [guardarAberto, setGuardarAberto] = useState(false);
+  const [nomeLugar, setNomeLugar] = useState("");
+  const [copiado, setCopiado] = useState(false);
 
   const entries = useMemo(() => {
     return people
@@ -135,6 +197,9 @@ export default function MapPanel({
     camada.current = L.layerGroup().addTo(map);
     reguaCamada.current = L.layerGroup().addTo(map);
     buscaCamada.current = L.layerGroup().addTo(map);
+    lugaresCamada.current = L.layerGroup().addTo(map);
+    /* a rota fica por baixo dos alfinetes, mas acima das ruas */
+    rotaCamada.current = L.layerGroup().addTo(map);
     mapa.current = map;
 
     /* o painel pode aparecer já montado com altura 0: mede outra vez e volta
@@ -151,6 +216,8 @@ export default function MapPanel({
       camada.current = null;
       reguaCamada.current = null;
       buscaCamada.current = null;
+      rotaCamada.current = null;
+      lugaresCamada.current = null;
       baseCamadas.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -235,6 +302,32 @@ export default function MapPanel({
     });
   }, [pontos]);
 
+  /* rota desenhada pelas ruas */
+  useEffect(() => {
+    const grupo = rotaCamada.current;
+    if (!grupo) return;
+
+    grupo.clearLayers();
+    if (!rota?.pontos?.length) return;
+
+    L.polyline(rota.pontos, { color: "#22ff44", weight: 7, opacity: 0.3 }).addTo(grupo);
+    L.polyline(rota.pontos, { color: "#22ff44", weight: 3 }).addTo(grupo);
+  }, [rota]);
+
+  /* lugares guardados no aparelho */
+  useEffect(() => {
+    const grupo = lugaresCamada.current;
+    if (!grupo) return;
+
+    grupo.clearLayers();
+
+    lugares.forEach((lugar) => {
+      L.marker([lugar.lat, lugar.lng], { icon: ICONE_LUGAR })
+        .addTo(grupo)
+        .bindTooltip(lugar.nome, { direction: "top", offset: [0, -18] });
+    });
+  }, [lugares]);
+
   /* quando o GPS responde, o mapa vai para lá */
   useEffect(() => {
     if (!myPlace || !mapa.current) return;
@@ -305,6 +398,7 @@ export default function MapPanel({
         .openPopup();
 
       setAchado(nome);
+      setAchadoLugar({ lat, lng, nome });
     } catch {
       setAchado("Não consegui procurar agora. Verifique a ligação.");
     } finally {
@@ -317,6 +411,106 @@ export default function MapPanel({
       if (ligada) setPontos([]);
       return !ligada;
     });
+  };
+
+  /* rota pelas ruas até um ponto (contato, lugar guardado ou procura) */
+  const tracarRota = async (destino) => {
+    if (!destino || aRotar) return;
+
+    if (!myPlace) {
+      setAviso("Libere sua localização para traçar a rota.");
+      onLocate?.();
+      return;
+    }
+
+    setAviso("");
+    setARotar(true);
+
+    try {
+      const url =
+        `${ROTAS}/${myPlace.lng},${myPlace.lat};${destino.lng},${destino.lat}` +
+        "?overview=full&geometries=geojson";
+
+      const resposta = await fetch(url);
+      if (!resposta.ok) throw new Error();
+
+      const dados = await resposta.json();
+      const caminho = dados?.routes?.[0];
+
+      if (!caminho) {
+        setAviso("Não encontrei uma rota pelas ruas até aí.");
+        return;
+      }
+
+      const pontosRota = caminho.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+
+      setRota({
+        nome: destino.nome ?? "o destino",
+        km: caminho.distance / 1000,
+        min: caminho.duration / 60,
+        pontos: pontosRota,
+      });
+
+      mapa.current?.fitBounds(L.latLngBounds(pontosRota), { padding: [28, 28] });
+    } catch {
+      setAviso("Não consegui calcular a rota agora. Verifique a ligação.");
+    } finally {
+      setARotar(false);
+    }
+  };
+
+  /* guarda o centro do mapa como lugar, no próprio aparelho */
+  const guardarLugar = (evento) => {
+    evento?.preventDefault();
+
+    const centro = mapa.current?.getCenter();
+    if (!centro) return;
+
+    const nome = nomeLugar.trim() || `Lugar ${lugares.length + 1}`;
+    const novo = { id: String(Date.now()), nome, lat: centro.lat, lng: centro.lng };
+
+    setLugares((atuais) => {
+      const lista = [novo, ...atuais].slice(0, 20);
+      gravarLugares(lista);
+
+      return lista;
+    });
+
+    setNomeLugar("");
+    setGuardarAberto(false);
+  };
+
+  const apagarLugar = (id) => {
+    setLugares((atuais) => {
+      const lista = atuais.filter((lugar) => lugar.id !== id);
+      gravarLugares(lista);
+
+      return lista;
+    });
+  };
+
+  /* link do OpenStreetMap, para mandar a posição a alguém */
+  const copiarPosicao = async () => {
+    if (!myPlace) return;
+
+    const lat = myPlace.lat.toFixed(6);
+    const lng = myPlace.lng.toFixed(6);
+    const texto = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
+
+    try {
+      /* no telemóvel abre a folha de partilha; no computador copia */
+      if (navigator.share) {
+        await navigator.share({ title: "A minha posição", url: texto });
+      } else {
+        await navigator.clipboard.writeText(texto);
+      }
+
+      setCopiado(true);
+      window.setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      /* sem clipboard nem partilha: mostra o link para copiar à mão */
+      setAviso(`Copie este link: ${texto}`);
+    }
   };
 
   /* tocar num contato da lista leva o mapa até ele */
@@ -338,15 +532,28 @@ export default function MapPanel({
         </button>
       </div>
 
-      <p className={`map__locate${geoError ? " is-error" : ""}`} role="status" aria-live="polite">
-        {locating
-          ? "Lendo o GPS do aparelho…"
-          : geoError
-            ? geoError
-            : known
-              ? `Sua posição: ${myPlace.lat.toFixed(4)}, ${myPlace.lng.toFixed(4)}`
-              : "Sua posição ainda não foi liberada para o comunicador."}
-      </p>
+      <div className="map__locateLinha">
+        <p
+          className={`map__locate${geoError ? " is-error" : ""}`}
+          role="status"
+          aria-live="polite"
+        >
+          {locating
+            ? "Lendo o GPS do aparelho…"
+            : geoError
+              ? geoError
+              : known
+                ? `Sua posição: ${myPlace.lat.toFixed(4)}, ${myPlace.lng.toFixed(4)}`
+                : "Sua posição ainda não foi liberada para o comunicador."}
+        </p>
+
+        {known && !locating ? (
+          <button type="button" className="map__copiar" onClick={copiarPosicao}>
+            <CopyIcon />
+            {copiado ? "link copiado" : "copiar link"}
+          </button>
+        ) : null}
+      </div>
 
       <form className="map__busca" onSubmit={buscar}>
         <input
@@ -365,7 +572,40 @@ export default function MapPanel({
       {achado ? (
         <p className="map__achado" role="status" aria-live="polite">
           {achado}
+
+          {achadoLugar ? (
+            <button
+              type="button"
+              className="map__achadoRota"
+              disabled={aRotar}
+              onClick={() => tracarRota(achadoLugar)}
+            >
+              <RouteIcon /> rota até aqui
+            </button>
+          ) : null}
         </p>
+      ) : null}
+
+      {aviso ? (
+        <p className="map__aviso" role="status" aria-live="polite">
+          {aviso}
+        </p>
+      ) : null}
+
+      {guardarAberto ? (
+        <form className="map__guardar" onSubmit={guardarLugar}>
+          <input
+            className="calls__search"
+            value={nomeLugar}
+            onChange={(evento) => setNomeLugar(evento.target.value)}
+            placeholder="Nome do lugar (guarda o centro do mapa)"
+            aria-label="Nome do lugar a guardar"
+          />
+
+          <button type="submit" className="calls__teamBtn">
+            Guardar
+          </button>
+        </form>
       ) : null}
 
       <div className={`mapWrap${cheio ? " mapWrap--cheio" : ""}`}>
@@ -404,6 +644,17 @@ export default function MapPanel({
           <button
             type="button"
             className="map__ferramenta"
+            aria-pressed={guardarAberto}
+            title="Guardar o centro do mapa"
+            aria-label="Guardar o centro do mapa"
+            onClick={() => setGuardarAberto((aberto) => !aberto)}
+          >
+            <BookmarkIcon />
+          </button>
+
+          <button
+            type="button"
+            className="map__ferramenta"
             aria-pressed={regua}
             title="Medir distância"
             aria-label="Medir distância"
@@ -423,8 +674,20 @@ export default function MapPanel({
           </button>
         </div>
 
+        {rota ? (
+          <div className="map__rota" role="status">
+            <RouteIcon />
+            <span>
+              {formatKm(rota.km)} · {formatMinutos(rota.min)} de carro até {rota.nome}
+            </span>
+            <button type="button" onClick={() => setRota(null)}>
+              limpar
+            </button>
+          </div>
+        ) : null}
+
         {regua ? (
-          <div className="map__medida" role="status">
+          <div className={`map__medida${rota ? " map__medida--acima" : ""}`} role="status">
             {pontos.length
               ? `${formatKm(medida)} · ${pontos.length} ${pontos.length === 1 ? "ponto" : "pontos"}`
               : "Toque no mapa para marcar os pontos."}
@@ -454,36 +717,96 @@ export default function MapPanel({
         <ul className="map__list">
           {entries.map(({ person, place, km }) => (
             <li key={person.hero}>
-              <button
-                type="button"
-                className="map__row"
-                style={{ "--accent-base": themeById(person.hero).accent }}
-                onClick={() => irPara(person)}
-              >
-                <span className="map__rowIcon" aria-hidden="true">
-                  <ThemeIcon id={person.hero} />
-                </span>
-
-                <span className="map__rowWho">
-                  <strong>{person.name}</strong>
-                  <span>
-                    {place
-                      ? `posição de ${new Date(place.at ?? Date.now()).toLocaleTimeString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}`
-                      : "sem localização compartilhada"}
+              <div className="map__row" style={{ "--accent-base": themeById(person.hero).accent }}>
+                <button type="button" className="map__rowMain" onClick={() => irPara(person)}>
+                  <span className="map__rowIcon" aria-hidden="true">
+                    <ThemeIcon id={person.hero} />
                   </span>
-                </span>
 
-                <span className="map__rowDistance">{km != null ? formatKm(km) : statusLabel(person.status)}</span>
-              </button>
+                  <span className="map__rowWho">
+                    <strong>{person.name}</strong>
+                    <span>
+                      {place
+                        ? `posição de ${new Date(place.at ?? Date.now()).toLocaleTimeString("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}`
+                        : "sem localização compartilhada"}
+                    </span>
+                  </span>
+
+                  <span className="map__rowDistance">
+                    {km != null ? formatKm(km) : statusLabel(person.status)}
+                  </span>
+                </button>
+
+                {place ? (
+                  <button
+                    type="button"
+                    className="map__rowRota"
+                    disabled={aRotar}
+                    aria-label={`Rota até ${person.name}`}
+                    title={`Rota até ${person.name}`}
+                    onClick={() => tracarRota({ ...place, nome: person.name })}
+                  >
+                    <RouteIcon />
+                  </button>
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>
       ) : (
         <p className="calls__empty">Nenhum herói na roda.</p>
       )}
+
+      {lugares.length ? (
+        <>
+          <div className="map__listHead">
+            <h2 className="calls__label">Lugares guardados</h2>
+            <span className="calls__count">{lugares.length}</span>
+          </div>
+
+          <ul className="map__list">
+            {lugares.map((lugar) => (
+              <li key={lugar.id}>
+                <div className="map__row map__row--lugar">
+                  <button
+                    type="button"
+                    className="map__rowMain"
+                    onClick={() => mapa.current?.setView([lugar.lat, lugar.lng], 16)}
+                  >
+                    <span className="map__rowIcon" aria-hidden="true">
+                      <BookmarkIcon />
+                    </span>
+
+                    <span className="map__rowWho">
+                      <strong>{lugar.nome}</strong>
+                      <span>
+                        {lugar.lat.toFixed(4)}, {lugar.lng.toFixed(4)}
+                      </span>
+                    </span>
+
+                    <span className="map__rowDistance">
+                      {myPlace ? formatKm(distanceKm(myPlace, lugar)) : ""}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="map__rowRota map__rowRota--apagar"
+                    aria-label={`Apagar ${lugar.nome}`}
+                    title={`Apagar ${lugar.nome}`}
+                    onClick={() => apagarLugar(lugar.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
 
       <p className="calls__hint">
         <PinIcon /> A posição do seu aparelho é lida na hora e fica só nesta aba. Quem recebe um
