@@ -45,4 +45,5 @@ export const local = {
   ler: (chave) => (typeof localStorage === "undefined" ? null : ler(localStorage, chave)),
   guardar: (chave, valor) =>
     typeof localStorage === "undefined" ? undefined : guardar(localStorage, chave, valor),
+  apagar: (chave) => (typeof localStorage === "undefined" ? undefined : apagar(localStorage, chave)),
 };

@@ -1,9 +1,8 @@
 {
-  "versao": "1.34",
-  "codigo": 35,
+  "versao": "1.35",
+  "codigo": 36,
   "novidades": [
-    "Som enquanto a chamada toca: sinal de chamada para quem liga e toque do comunicador para quem recebe",
-    "O som para assim que atende, recusa ou desliga",
-    "Feito no próprio aparelho, sem ficheiros de áudio: não puxa dados nem precisa de rede"
+    "O herói fica guardado no aparelho: da segunda vez a app abre direto na roda, sem escolher outra vez",
+    "Quem quiser trocar de herói vai às definições e toca em Sair"
   ]
 }

@@ -3,19 +3,22 @@ import ThemeIcon from "../carrossel/ThemeIcon";
 import { THEMES, themeById } from "../carrossel/themes";
 import { DownloadIcon, PhoneIcon } from "./icons";
 import { IS_NATIVE } from "./plataforma";
-import { sessao } from "./armazem";
+import { local, sessao } from "./armazem";
 import { APK_URL, VERSAO_APP, versaoPublicada } from "./versao";
 import { instalarNoAparelho } from "./atualizarApk";
 
 /**
  * Porta de entrada: escolher o herói da vez.
  *
- * A identidade é o herói — não há nome de pessoa nem senha. A conta fica na
- * sessão da aba (sessionStorage), então duas abas podem ser dois heróis
- * diferentes, que é como se testa uma chamada no mesmo computador.
+ * A identidade é o herói — não há nome de pessoa nem senha. O herói fica
+ * guardado no aparelho (localStorage), por isso quem já entrou uma vez não
+ * volta a escolher ao abrir a app; este ecrã só aparece à primeira vez ou
+ * depois de sair nas definições.
  */
 export default function Identity({ onEnter, notice }) {
-  const [hero, setHero] = useState(() => sessao.ler("roda:hero") ?? "cat");
+  const [hero, setHero] = useState(
+    () => local.ler("roda:hero") ?? sessao.ler("roda:hero") ?? "cat"
+  );
   const [aAtualizar, setAAtualizar] = useState(false);
   const [estado, setEstado] = useState("");
 
@@ -58,6 +61,7 @@ export default function Identity({ onEnter, notice }) {
 
   const submit = (event) => {
     event.preventDefault();
+    local.guardar("roda:hero", hero);
     sessao.guardar("roda:hero", hero);
     onEnter({ hero });
   };

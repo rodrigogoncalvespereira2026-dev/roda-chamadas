@@ -15,7 +15,7 @@ import { avisarChamada, cancelarAviso, foraDoEcra, prepararAvisos } from "./avis
 import { acordarSom, pararToque, tocarToque } from "./som";
 import { createRealtime } from "./realtime";
 import { readPosition } from "./geo";
-import { sessao } from "./armazem";
+import { local, sessao } from "./armazem";
 import { IS_NATIVE } from "./plataforma";
 import { PRECISA_INSTALAR } from "./instalacao";
 import { VERSAO_APP, versaoPublicada } from "./versao";
@@ -97,7 +97,10 @@ function CallsApp() {
 
   /* A conta é o herói desta aba: recarregar a página não derruba ninguém. */
   const [identity, setIdentity] = useState(() => {
-    const hero = sessao.ler("roda:hero");
+    /* O herói fica guardado no aparelho: na segunda vez que se abre a app
+       entra-se direto, sem voltar a escolher. Só sai quando se carrega em
+       "Sair" nas definições (ou quando outro aparelho toma o herói). */
+    const hero = local.ler("roda:hero") ?? sessao.ler("roda:hero");
     return hero ? { hero } : null;
   });
   /* Dentro do APK, a versão publicada no servidor pode ser mais nova que esta. */
@@ -152,6 +155,11 @@ function CallsApp() {
   }, [people]);
   useEffect(() => {
     identityRef.current = identity;
+  }, [identity]);
+
+  /* quem já estava ligado só nesta aba passa a ficar guardado no aparelho */
+  useEffect(() => {
+    if (identity?.hero) local.guardar("roda:hero", identity.hero);
   }, [identity]);
   useEffect(() => {
     myPlaceRef.current = myPlace;
@@ -511,6 +519,7 @@ function CallsApp() {
 
     offs.push(
       rt.on("kicked", ({ message }) => {
+        local.apagar("roda:hero");
         sessao.apagar("roda:hero");
         setIdentity(null);
         setMe(null);
@@ -573,6 +582,10 @@ function CallsApp() {
 
   const enter = useCallback(({ hero }) => {
     setError("");
+    /* depois de sair e voltar a entrar, não se cai nas definições outra vez */
+    setDefinicoes(false);
+    local.guardar("roda:hero", hero);
+    sessao.guardar("roda:hero", hero);
     setIdentity({ hero });
     rtRef.current.connect();
     rtRef.current.send("join", { hero, tab: TAB_ID });
@@ -580,6 +593,8 @@ function CallsApp() {
 
   const leave = useCallback(() => {
     if (callRef.current) endCall();
+    /* sair é a única forma de trocar de herói: esquece o que estava guardado */
+    local.apagar("roda:hero");
     sessao.apagar("roda:hero");
     setIdentity(null);
     setMe(null);
