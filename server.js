@@ -23,6 +23,17 @@ import { extname, join, resolve, sep } from "node:path";
 import { randomUUID } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { THEMES } from "./carrossel/themes.js";
+import {
+  abrirChamada,
+  atenderChamada,
+  fecharChamada,
+  guardarMensagem,
+  ligar,
+  marcarEntregue,
+  marcarEntregues,
+  mensagensPendentes,
+  temBase,
+} from "./db.js";
 
 const PORT = Number(process.env.PORT) || 10000;
 
@@ -150,11 +161,56 @@ function dropCall(call, reason, by) {
   const members = membersOf(call);
   const everyone = new Set([call.from, ...call.accepted, ...call.invited]);
 
+  /* O registo da chamada fecha aqui: quem participou, como acabou e quanto
+     durou. Sem base configurada isto não faz nada. */
+  fecharChamada({
+    id: call.id,
+    membros: members.map((member) => member.hero),
+    estado: call.accepted.size
+      ? "terminada"
+      : reason === "no-answer"
+        ? "sem-resposta"
+        : "cancelada",
+    motivo: reason,
+    fim: Date.now(),
+  });
+
   for (const hero of everyone) {
     sendTo(hero, { t: "call-ended", callId: call.id, reason, by: by ?? null, members });
   }
 
   broadcastPresence();
+}
+
+/**
+ * Recados que ficaram na base por entregar (o processo reiniciou, ou o herói
+ * esteve fora mais tempo do que a memória aguenta). Só corre para quem este
+ * processo ainda não conhecia, para não repetir o que a memória já entregou.
+ */
+async function entregarPendentes(ws, hero) {
+  const pendentes = await mensagensPendentes(hero);
+  if (!pendentes.length) return;
+
+  const entregues = [];
+
+  for (const doc of pendentes) {
+    if (ws.readyState !== 1) break;
+
+    const autor = users.get(doc.de);
+
+    send(ws, {
+      t: "message",
+      from: autor
+        ? personOf(autor)
+        : { hero: doc.de, name: HEROES.get(doc.de)?.name ?? doc.de, status: "offline" },
+      text: doc.texto,
+      at: new Date(doc.em).getTime(),
+    });
+
+    entregues.push(doc._id);
+  }
+
+  await marcarEntregues(entregues);
 }
 
 /* ---------- HTTP: só o instalador ---------- */
@@ -377,8 +433,16 @@ wss.on("connection", (ws) => {
       });
 
       // recados que chegaram enquanto o herói estava fora
-      for (const item of pessoa.inbox) send(ws, { t: "message", ...item });
+      for (const item of pessoa.inbox) {
+        send(ws, { t: "message", from: item.from, text: item.text, at: item.at });
+
+        // o recado já está com o dono: marca na base
+        Promise.resolve(item.base).then((id) => marcarEntregue(id));
+      }
       pessoa.inbox = [];
+
+      // processo reiniciado: o que estava por entregar na base sai agora
+      if (novo && temBase) entregarPendentes(ws, hero);
 
       broadcastPresence();
       return;
@@ -406,10 +470,22 @@ wss.on("connection", (ws) => {
 
         send(ws, { t: "message-sent", to: destino, text, at });
 
+        const online = Boolean(alvo.ws);
+
+        // guarda o recado na base (se estiver configurada) logo à partida
+        const naBase = guardarMensagem({
+          de: user.hero,
+          para: destino,
+          texto: text,
+          em: at,
+          entregue: online,
+        });
+
         if (alvo.ws) {
           send(alvo.ws, { t: "message", from, text, at });
         } else {
-          alvo.inbox.push({ from, text, at });
+          // fica à espera na memória, com o id da base para marcar na entrega
+          alvo.inbox.push({ from, text, at, base: naBase });
           alvo.inbox = alvo.inbox.slice(-50);
         }
         return;
@@ -460,6 +536,15 @@ wss.on("connection", (ws) => {
 
         calls.set(call.id, call);
 
+        abrirChamada({
+          id: call.id,
+          de: call.from,
+          para: livres,
+          tipo: call.kind,
+          em: call.createdAt,
+          lugar: call.place,
+        });
+
         send(ws, {
           t: "calling",
           callId: call.id,
@@ -491,6 +576,11 @@ wss.on("connection", (ws) => {
 
         call.invited.delete(user.hero);
         call.accepted.add(user.hero);
+
+        atenderChamada({
+          id: call.id,
+          membros: membersOf(call).map((member) => member.hero),
+        });
 
         const roster = {
           t: "roster",
@@ -600,4 +690,11 @@ wss.on("close", () => clearInterval(heartbeat));
 
 server.listen(PORT, () => {
   console.log(`Roda de Chamadas em http://localhost:${PORT} (WebSocket em /ws)`);
+
+  if (temBase) {
+    // aquece a ligação ao Atlas: se falhar, a app segue sem memória guardada
+    ligar();
+  } else {
+    console.log("Sem MONGODB_URI: recados e chamadas ficam só em memória.");
+  }
 });
