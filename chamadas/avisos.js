@@ -15,7 +15,13 @@ import { App } from "@capacitor/app";
 import { isThemeId } from "../carrossel/themes";
 import { IS_NATIVE } from "./plataforma";
 
-const CANAL = "chamadas";
+/*
+  O canal tem um id novo de propósito: o Android não deixa mudar o som de um
+  canal já criado, e o antigo ("chamadas") nasceu sem som — silencioso, e por
+  isso descartado pelas apps que passam os avisos para o relógio.
+*/
+const CANAL = "chamadas-alerta";
+const SOM = "chamada.wav";
 
 let canal = null;
 /** A app está à frente do utilizador? */
@@ -49,6 +55,7 @@ function prepararCanal() {
           description: "Quem está a chamar",
           importance: 5,
           visibility: 1,
+          sound: SOM,
           vibration: true,
           lights: true,
         });
@@ -60,6 +67,7 @@ function prepararCanal() {
             id: CANAL,
             name: "Chamadas",
             importance: 5,
+            sound: SOM,
             vibration: true,
           });
         } catch {
@@ -143,6 +151,8 @@ export async function avisarChamada(invite) {
     */
     ongoing: false,
     autoCancel: true,
+    // som do aviso (o canal já o define no Android 8+; isto cobre os mais velhos)
+    sound: SOM,
     extra: { callId: invite.callId },
   });
 }

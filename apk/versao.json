@@ -1,9 +1,9 @@
 {
-  "versao": "1.40",
-  "codigo": 41,
+  "versao": "1.41",
+  "codigo": 42,
   "novidades": [
-    "O aviso de chamada passa a chegar aos relógios: deixou de ser uma notificação \"em curso\", que as apps dos relógios costumam ignorar",
-    "O símbolo do herói continua a aparecer no aviso do telemóvel",
-    "Se a imagem falhar em algum aparelho, o aviso aparece na mesma, só sem símbolo"
+    "O aviso de chamada passou a ter som próprio, com as duas notas do comunicador — os relógios costumam ignorar avisos silenciosos",
+    "O canal de notificações mudou de nome porque o Android não deixa mudar o som de um canal já criado",
+    "O símbolo do herói e a vibração continuam iguais"
   ]
 }
