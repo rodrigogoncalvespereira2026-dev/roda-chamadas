@@ -1,9 +1,9 @@
 {
-  "versao": "1.37",
-  "codigo": 38,
+  "versao": "1.38",
+  "codigo": 39,
   "novidades": [
-    "O botão do altifalante passou a funcionar: ligado o som sai no volume cheio, desligado fica baixinho para encostar ao ouvido",
-    "Chamadas de voz, e chamadas com a câmara desligada, passaram a ter som — antes ficavam em silêncio",
-    "Ao fechar a chamada o volume volta ao normal"
+    "A lista de recados passou a ser uma caixa de entrada: quem tem recados por ler fica no topo e as conversas mais recentes logo abaixo",
+    "Cada linha mostra o último recado e a hora, sem precisar de abrir a conversa",
+    "A presença virou um ponto colorido ao lado do nome, e o texto do recado ganhou espaço"
   ]
 }
