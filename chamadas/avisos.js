@@ -12,6 +12,7 @@
 
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { App } from "@capacitor/app";
+import { isThemeId } from "../carrossel/themes";
 import { IS_NATIVE } from "./plataforma";
 
 const CANAL = "chamadas";
@@ -111,6 +112,12 @@ export async function avisarChamada(invite) {
               ? "Videochamada — toque para atender"
               : "Chamada de voz — toque para atender",
           channelId: CANAL,
+          /*
+            O símbolo de quem liga, no sítio do ícone genérico. As imagens são
+            desenhadas por scripts/avatares.mjs dentro de res/drawable — o
+            Android só aceita aqui o nome de um recurso, não um SVG nem um URL.
+          */
+          largeIcon: isThemeId(invite.from?.hero) ? `heroi_${invite.from.hero}` : undefined,
           ongoing: true,
           autoCancel: true,
           extra: { callId: invite.callId },

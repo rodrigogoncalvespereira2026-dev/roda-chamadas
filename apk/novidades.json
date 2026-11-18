@@ -1,4 +1,9 @@
 {
+  "40": [
+    "O aviso de chamada passou a mostrar o símbolo de quem liga, na cor do herói, em vez do ícone genérico da app",
+    "Aparece na barra de notificações e com o ecrã bloqueado",
+    "Relógios que espelham os avisos do telemóvel continuam a mostrar o nome de quem liga"
+  ],
   "39": [
     "A lista de recados passou a ser uma caixa de entrada: quem tem recados por ler fica no topo e as conversas mais recentes logo abaixo",
     "Cada linha mostra o último recado e a hora, sem precisar de abrir a conversa",

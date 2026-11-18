@@ -1,9 +1,9 @@
 {
-  "versao": "1.38",
-  "codigo": 39,
+  "versao": "1.39",
+  "codigo": 40,
   "novidades": [
-    "A lista de recados passou a ser uma caixa de entrada: quem tem recados por ler fica no topo e as conversas mais recentes logo abaixo",
-    "Cada linha mostra o último recado e a hora, sem precisar de abrir a conversa",
-    "A presença virou um ponto colorido ao lado do nome, e o texto do recado ganhou espaço"
+    "O aviso de chamada passou a mostrar o símbolo de quem liga, na cor do herói, em vez do ícone genérico da app",
+    "Aparece na barra de notificações e com o ecrã bloqueado",
+    "Relógios que espelham os avisos do telemóvel continuam a mostrar o nome de quem liga"
   ]
 }
