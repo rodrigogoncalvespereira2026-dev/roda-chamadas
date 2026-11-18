@@ -1267,6 +1267,20 @@ body {
 }
 
 /*
+  Sem imagem o vídeo continua montado — é por ele que se ouve a voz — só não se
+  vê. O avatar desenhado fica por cima.
+*/
+.palco__video--oculto {
+  opacity: 0;
+}
+
+.palco__bolha > svg,
+.palco__satelite > svg {
+  position: relative;
+  z-index: 1;
+}
+
+/*
   Com a câmara ligada o palco deixa de ser um círculo: a imagem de vídeo passa a
   um retângulo 4:3 (o formato em que se vê uma pessoa) com cantos macios. Sem
   vídeo — avatar, a chamar, à espera — a bolha redonda fica como estava.

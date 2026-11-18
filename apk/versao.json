@@ -1,9 +1,9 @@
 {
-  "versao": "1.36",
-  "codigo": 37,
+  "versao": "1.37",
+  "codigo": 38,
   "novidades": [
-    "A imagem da câmara na videochamada passou a ser retangular, em vez do círculo",
-    "Com vídeo o palco fica maior: vê-se mais da outra pessoa",
-    "O meu vídeo pequeno, no canto do ecrã, também é retangular"
+    "O botão do altifalante passou a funcionar: ligado o som sai no volume cheio, desligado fica baixinho para encostar ao ouvido",
+    "Chamadas de voz, e chamadas com a câmara desligada, passaram a ter som — antes ficavam em silêncio",
+    "Ao fechar a chamada o volume volta ao normal"
   ]
 }

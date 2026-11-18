@@ -124,7 +124,7 @@ function PlayGlyph() {
   );
 }
 
-function Stream({ stream, muted, className, onImagem }) {
+function Stream({ stream, muted, className, onImagem, volume = 1 }) {
   const ref = useRef(null);
   /* O iPhone começa com o vídeo parado à espera de um toque: enquanto isso,
      o círculo preto ganha um botão em vez de ficar mudo e sem explicação. */
@@ -143,6 +143,7 @@ function Stream({ stream, muted, className, onImagem }) {
     node.setAttribute("playsinline", "");
     node.setAttribute("webkit-playsinline", "");
     node.muted = Boolean(muted);
+    node.volume = Math.min(1, Math.max(0, volume));
 
     const ligar = (reconstruir) => {
       if (!stream) return;
@@ -203,6 +204,17 @@ function Stream({ stream, muted, className, onImagem }) {
     };
   }, [stream, muted, onImagem]);
 
+  /*
+    O volume muda com a chamada a decorrer, sem remontar o elemento (remontar
+    cortava o som por um instante). `volume` do <video> funciona no Chrome e no
+    WebView do Android; o Safari do iPhone ignora-o — lá o altifalante é sempre
+    o do aparelho.
+  */
+  useEffect(() => {
+    const node = ref.current;
+    if (node) node.volume = Math.min(1, Math.max(0, volume));
+  }, [volume, stream]);
+
   return (
     <>
       <video ref={ref} className={className} autoPlay playsInline muted={muted} />
@@ -257,8 +269,17 @@ export default function CallScreen({
   /* Roda o ícone da câmera a cada toque em "Trocar". */
   const [girar, setGirar] = useState(false);
   /* Botões extra da barra: mudam de estado no aparelho. */
-  const [extra, setExtra] = useState({ ecra: false, mao: false, altifalante: false, efeitos: false });
+  const [extra, setExtra] = useState({ ecra: false, mao: false, efeitos: false });
   const alternarExtra = (chave) => setExtra((atual) => ({ ...atual, [chave]: !atual[chave] }));
+
+  /*
+    Altifalante: o som de quem está do outro lado sai no volume cheio (ligado) ou
+    baixinho, para encostar ao ouvido (desligado). Não é um botão decorativo como
+    os da barra extra — muda mesmo o volume da chamada, e volta ao cheio quando
+    a chamada fecha.
+  */
+  const [altifalante, setAltifalante] = useState(true);
+  const volumeRemoto = altifalante ? 1 : 0.28;
 
   const painel = useRef(null);
   /* Controlos à vista? No desenho só aparecem quando se toca no ecrã. */
@@ -337,11 +358,17 @@ export default function CallScreen({
             <span className="palco__anel" aria-hidden="true" />
 
             <div className="palco__bolha">
-              {principal.hasVideo ? (
-                <Stream stream={principal.stream} className="palco__video" />
-              ) : (
-                <ThemeIcon id={principal.hero} />
-              )}
+              {/*
+                O vídeo fica sempre montado, mesmo sem imagem: é ele que traz a voz
+                do outro lado. Antes só existia quando havia vídeo, e por isso uma
+                chamada de voz (ou com a câmara desligada) ficava em silêncio.
+              */}
+              <Stream
+                stream={principal.stream}
+                className={`palco__video${principal.hasVideo ? "" : " palco__video--oculto"}`}
+                volume={volumeRemoto}
+              />
+              {principal.hasVideo ? null : <ThemeIcon id={principal.hero} />}
             </div>
 
             <p className="palco__nome">{themeById(principal.hero).name}</p>
@@ -382,11 +409,12 @@ export default function CallScreen({
                   }}
                   title={`${themeById(peer.hero).name} · ${PEER_STATE[peer.state] ?? "no canal"}`}
                 >
-                  {peer.hasVideo ? (
-                    <Stream stream={peer.stream} className="palco__video" />
-                  ) : (
-                    <ThemeIcon id={peer.hero} />
-                  )}
+                  <Stream
+                    stream={peer.stream}
+                    className={`palco__video${peer.hasVideo ? "" : " palco__video--oculto"}`}
+                    volume={volumeRemoto}
+                  />
+                  {peer.hasVideo ? null : <ThemeIcon id={peer.hero} />}
                 </li>
               );
             })}
@@ -486,10 +514,10 @@ export default function CallScreen({
             <button
               type="button"
               className="call__btn call__btn--speaker"
-              aria-pressed={extra.altifalante}
-              onClick={() => alternarExtra("altifalante")}
-              aria-label="Altifalante"
-              title="Altifalante"
+              aria-pressed={altifalante}
+              onClick={() => setAltifalante((ligado) => !ligado)}
+              aria-label={altifalante ? "Desligar o altifalante" : "Ligar o altifalante"}
+              title={altifalante ? "Altifalante ligado" : "Altifalante desligado"}
             >
               <SpeakerFillIcon />
             </button>
