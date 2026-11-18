@@ -1,4 +1,9 @@
 {
+  "41": [
+    "O aviso de chamada passa a chegar aos relógios: deixou de ser uma notificação \"em curso\", que as apps dos relógios costumam ignorar",
+    "O símbolo do herói continua a aparecer no aviso do telemóvel",
+    "Se a imagem falhar em algum aparelho, o aviso aparece na mesma, só sem símbolo"
+  ],
   "40": [
     "O aviso de chamada passou a mostrar o símbolo de quem liga, na cor do herói, em vez do ícone genérico da app",
     "Aparece na barra de notificações e com o ecrã bloqueado",

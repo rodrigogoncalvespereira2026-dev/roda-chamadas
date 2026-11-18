@@ -96,37 +96,55 @@ export async function prepararAvisos() {
   await prepararCanal();
 }
 
+/**
+ * Agenda o aviso. Se o Android recusar a imagem (recurso em falta numa build
+ * antiga, por exemplo), repete sem ela — melhor um aviso sem símbolo do que
+ * nenhum aviso.
+ */
+async function agendar(aviso) {
+  try {
+    await LocalNotifications.schedule({ notifications: [aviso] });
+    return;
+  } catch {
+    if (!aviso.largeIcon) return;
+  }
+
+  try {
+    const { largeIcon, ...semImagem } = aviso;
+    await LocalNotifications.schedule({ notifications: [semImagem] });
+  } catch {
+    /* o aviso é extra: a chamada em si continua */
+  }
+}
+
 /** Aviso do sistema com quem está a chamar. */
 export async function avisarChamada(invite) {
   if (!invite) return;
   if (!(await prepararCanal())) return;
 
-  try {
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: idDe(invite.callId),
-          title: `Chamada de ${invite.from.name}`,
-          body:
-            invite.kind === "video"
-              ? "Videochamada — toque para atender"
-              : "Chamada de voz — toque para atender",
-          channelId: CANAL,
-          /*
-            O símbolo de quem liga, no sítio do ícone genérico. As imagens são
-            desenhadas por scripts/avatares.mjs dentro de res/drawable — o
-            Android só aceita aqui o nome de um recurso, não um SVG nem um URL.
-          */
-          largeIcon: isThemeId(invite.from?.hero) ? `heroi_${invite.from.hero}` : undefined,
-          ongoing: true,
-          autoCancel: true,
-          extra: { callId: invite.callId },
-        },
-      ],
-    });
-  } catch {
-    /* o aviso é extra: a chamada em si continua */
-  }
+  await agendar({
+    id: idDe(invite.callId),
+    title: `Chamada de ${invite.from.name}`,
+    body:
+      invite.kind === "video"
+        ? "Videochamada — toque para atender"
+        : "Chamada de voz — toque para atender",
+    channelId: CANAL,
+    /*
+      O símbolo de quem liga, no sítio do ícone genérico. As imagens são
+      desenhadas por scripts/avatares.mjs dentro de res/drawable — o Android só
+      aceita aqui o nome de um recurso, não um SVG nem um URL.
+    */
+    largeIcon: isThemeId(invite.from?.hero) ? `heroi_${invite.from.hero}` : undefined,
+    /*
+      Não é "em curso": as apps que passam os avisos para o relógio (Smart Life,
+      Da Fit, FitCloudPro…) ignoram as notificações persistentes, e o aviso de
+      chamada nunca chegava ao pulso. Como alerta normal, passa.
+    */
+    ongoing: false,
+    autoCancel: true,
+    extra: { callId: invite.callId },
+  });
 }
 
 /** Tira o aviso quando a chamada foi atendida, recusada ou desligada. */
