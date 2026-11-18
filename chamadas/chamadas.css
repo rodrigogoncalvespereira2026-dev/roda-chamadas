@@ -1266,6 +1266,21 @@ body {
   object-fit: cover;
 }
 
+/*
+  Com a câmara ligada o palco deixa de ser um círculo: a imagem de vídeo passa a
+  um retângulo 4:3 (o formato em que se vê uma pessoa) com cantos macios. Sem
+  vídeo — avatar, a chamar, à espera — a bolha redonda fica como estava.
+*/
+.palco__principal[data-video="sim"] {
+  --bolha: clamp(210px, 80vw, 380px);
+}
+
+.palco__principal[data-video="sim"] .palco__anel,
+.palco__principal[data-video="sim"] .palco__bolha {
+  aspect-ratio: 4 / 3;
+  border-radius: 22px;
+}
+
 .palco__nome {
   margin: 0;
   font-size: clamp(18px, 4.6vw, 23px);
@@ -1357,16 +1372,16 @@ body {
   border-color: #ff8f9a;
 }
 
-/* o meu vídeo, bolha pequena a flutuar */
+/* o meu vídeo: retângulo pequeno a flutuar, no mesmo formato do palco */
 .palco__eu {
   position: absolute;
   right: 4px;
   bottom: 2px;
-  width: clamp(56px, 16vw, 74px);
-  aspect-ratio: 1;
+  width: clamp(84px, 26vw, 120px);
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   border: 1.5px solid var(--accent60);
-  border-radius: 50%;
+  border-radius: 14px;
   background: #0a0a0a;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
 }

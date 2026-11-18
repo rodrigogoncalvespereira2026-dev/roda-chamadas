@@ -1,8 +1,9 @@
 {
-  "versao": "1.35",
-  "codigo": 36,
+  "versao": "1.36",
+  "codigo": 37,
   "novidades": [
-    "O herói fica guardado no aparelho: da segunda vez a app abre direto na roda, sem escolher outra vez",
-    "Quem quiser trocar de herói vai às definições e toca em Sair"
+    "A imagem da câmara na videochamada passou a ser retangular, em vez do círculo",
+    "Com vídeo o palco fica maior: vê-se mais da outra pessoa",
+    "O meu vídeo pequeno, no canto do ecrã, também é retangular"
   ]
 }

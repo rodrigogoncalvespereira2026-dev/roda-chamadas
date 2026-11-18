@@ -331,6 +331,7 @@ export default function CallScreen({
           <div
             className="palco__principal"
             data-state={principal.state}
+            data-video={principal.hasVideo ? "sim" : "nao"}
             style={{ "--accent-base": themeById(principal.hero).accent }}
           >
             <span className="palco__anel" aria-hidden="true" />
