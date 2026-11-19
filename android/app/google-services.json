@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "512737758931",
+    "project_id": "roda-chamadas",
+    "storage_bucket": "roda-chamadas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:512737758931:android:abb80724b39ebddf4a4e26",
+        "android_client_info": {
+          "package_name": "br.com.chatnoir.roda"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB91r7bKtSaSfGtFAtmGIuVIqAtgF3L6DA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

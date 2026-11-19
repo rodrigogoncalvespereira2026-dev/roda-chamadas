@@ -1,4 +1,9 @@
 {
+  "48": [
+    "Avisos com a app fechada: chamar um herói que está fora da app passa a tocar o telemóvel dele",
+    "Ao abrir, a app pede permissão de notificações e regista o aparelho no Firebase",
+    "Os recados também chegam como aviso quando a app está fechada"
+  ],
   "47": [
     "O mapa passa a mostrar todos os heróis que partilham a posição, cada um com a hora a que o ponto foi lido",
     "Ao abrir o Mapa, a app pede a tua posição e partilha-a com o resto do time",

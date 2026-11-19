@@ -12,6 +12,7 @@ import ContactsPanel from "./ContactsPanel";
 import MapPanel from "./MapPanel";
 import { CallSession } from "./calls";
 import { avisarChamada, cancelarAviso, foraDoEcra, prepararAvisos } from "./avisos";
+import { prepararPush } from "./push";
 import { acordarSom, pararToque, tocarToque } from "./som";
 import { createRealtime } from "./realtime";
 import { readPosition } from "./geo";
@@ -150,6 +151,8 @@ function CallsApp() {
   const myPlaceRef = useRef(myPlace);
   /* último círculo tocado — é o que distingue um toque de um toque duplo */
   const toqueRef = useRef(null);
+  /* token do aparelho para os avisos com a app fechada (só no APK) */
+  const pushTokenRef = useRef("");
   /* a lista de marcados à mão: um toque duplo depressa não espera pelo render */
   const selecionadosRef = useRef([]);
 
@@ -576,6 +579,22 @@ function CallsApp() {
   useEffect(() => {
     prepararAvisos();
   }, []);
+
+  /*
+    Registo do aparelho no Firebase: é isto que permite tocar o telemóvel com a
+    app fechada. O token só vai para o servidor depois de o join estar feito
+    (o `me` chega com o welcome), senão o servidor não sabia de quem era.
+  */
+  useEffect(() => {
+    prepararPush((token) => {
+      pushTokenRef.current = token;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!me || !pushTokenRef.current) return;
+    rtRef.current.send("push-token", { token: pushTokenRef.current });
+  }, [me]);
 
   /* O primeiro toque no ecrã acorda o áudio: os navegadores só deixam tocar
      depois de um gesto, e o toque que abre a app já serve. */

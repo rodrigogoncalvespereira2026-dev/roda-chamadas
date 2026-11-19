@@ -21,6 +21,8 @@ import { IS_NATIVE } from "./plataforma";
   isso descartado pelas apps que passam os avisos para o relógio.
 */
 const CANAL = "chamadas-alerta";
+/* Os recados que chegam com a app fechada caem num canal mais discreto. */
+const CANAL_RECADOS = "recados";
 const SOM = "chamada.wav";
 
 let canal = null;
@@ -73,6 +75,22 @@ function prepararCanal() {
         } catch {
           /* sem canal fica o das notificações normais */
         }
+      }
+
+      // o aviso de recado (pelo Firebase) precisa deste canal para não cair
+      // no canal genérico da app
+      try {
+        await LocalNotifications.createChannel({
+          id: CANAL_RECADOS,
+          name: "Recados",
+          description: "Mensagens que chegam com a app fechada",
+          importance: 4,
+          visibility: 1,
+          sound: SOM,
+          vibration: true,
+        });
+      } catch {
+        /* sem ele, os recados usam o aviso normal da app */
       }
 
       try {
