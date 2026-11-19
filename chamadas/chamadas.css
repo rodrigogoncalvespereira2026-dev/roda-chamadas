@@ -3673,7 +3673,7 @@ body.mapaCheio .calls__panel {
   position: relative;
   display: grid;
   place-items: center;
-  width: clamp(52px, 13vw, 66px);
+  width: clamp(56px, 15vw, 76px);
   aspect-ratio: 1;
   padding: 0;
   border: 1px solid color-mix(in oklch, var(--accent-base) 72%, transparent);
@@ -3710,10 +3710,11 @@ body.mapaCheio .calls__panel {
   outline-offset: 3px;
 }
 
+/* chega de baixo, do lugar da roda, para se ver o círculo a sair dela */
 @keyframes escolhido-sobe {
   from {
     opacity: 0;
-    transform: translateY(28px) scale(0.72);
+    transform: translateY(72px) scale(0.55);
   }
   to {
     opacity: 1;

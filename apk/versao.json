@@ -1,9 +1,9 @@
 {
-  "versao": "1.43",
-  "codigo": 44,
+  "versao": "1.44",
+  "codigo": 45,
   "novidades": [
-    "Os heróis marcados sobem agora para uma fila de círculos por cima da roda, como no comunicador da série",
-    "Tocar num desses círculos tira o herói da chamada",
-    "Marcar vários heróis seguidos já não perde os primeiros"
+    "O círculo escolhido sai da roda e sobe para a fila de cima — a roda fica só com quem ainda não foi marcado",
+    "Tocar no círculo que está em cima devolve o herói à roda",
+    "O círculo sobe do lugar da roda, para se ver a escolha a acontecer"
   ]
 }

@@ -194,9 +194,16 @@ function CallsApp() {
 
   /* ---------- roda ---------- */
 
+  /*
+    A roda mostra só quem ainda não foi marcado: o herói escolhido sai dela e
+    sobe para a fila de cima — é o mesmo círculo a mudar de lugar, não uma
+    segunda cópia.
+  */
   const wheelThemes = useMemo(
     () =>
-      roster.map((person) => ({
+      roster
+        .filter((person) => !selecionados.includes(person.hero))
+        .map((person) => ({
         id: person.hero,
         name: person.name,
         accent: themeById(person.hero).accent,
@@ -204,7 +211,7 @@ function CallsApp() {
         statusLabel: STATUS_LABEL[person.status],
         unread: unread[person.hero] ?? 0,
       })),
-    [roster, unread]
+    [roster, selecionados, unread]
   );
 
   useEffect(() => {
