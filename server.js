@@ -34,7 +34,7 @@ import {
   mensagensPendentes,
   temBase,
 } from "./db.js";
-import { avisar, guardarToken, ligarPush } from "./push.js";
+import { avisar, guardarToken, ligarPush, temPush, totalTokens } from "./push.js";
 
 const PORT = Number(process.env.PORT) || 10000;
 
@@ -289,7 +289,16 @@ async function arquivoDoSite(pathname) {
 const server = createServer(async (req, res) => {
   if (req.url === "/healthz") {
     res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ ok: true, herois: users.size, chamadas: calls.size }));
+    res.end(
+      JSON.stringify({
+        ok: true,
+        herois: users.size,
+        chamadas: calls.size,
+        // diagnóstico dos avisos: a chave está ligada? há telemóveis registados?
+        push: temPush(),
+        tokens: totalTokens(),
+      })
+    );
     return;
   }
 

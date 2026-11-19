@@ -59,6 +59,9 @@ export function ligarPush() {
 export const temPush = () => Boolean(conta);
 export const tokensDe = (hero) => [...(tokens.get(hero) ?? [])];
 
+/** Quantos aparelhos estão registados (para o /healthz). */
+export const totalTokens = () => [...tokens.values()].reduce((soma, lista) => soma + lista.size, 0);
+
 /** Um aparelho passa a receber avisos em nome deste herói. */
 export function guardarToken(hero, token) {
   if (!hero || typeof token !== "string" || token.length < 20) return;
