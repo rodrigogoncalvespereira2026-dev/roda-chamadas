@@ -3653,50 +3653,82 @@ body.mapaCheio .calls__panel {
   width: 100%;
 }
 
-/* heróis marcados na roda: quem vai ser chamado quando o gesto fechar */
-.calls__marcados {
+/*
+  Heróis marcados: cada escolha sobe para uma fila de círculos por cima da roda,
+  como no comunicador da série. A altura mínima segura o lugar vazio, senão a
+  roda descia e voltava a subir a cada marcação.
+*/
+.calls__escolhidos {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   justify-content: center;
   width: min(94vw, 560px);
-  animation: panel-in 0.18s ease-out both;
+  min-height: 64px;
+  margin-bottom: 4px;
 }
 
-.calls__marcadosLista {
+.calls__escolhido {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(52px, 13vw, 66px);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 72%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 45%,
+    color-mix(in oklch, var(--accent-base) 30%, transparent),
+    transparent 72%
+  );
+  color: color-mix(in oklch, var(--accent-base) 88%, #fff);
+  box-shadow: 0 0 22px color-mix(in oklch, var(--accent-base) 30%, transparent);
+  cursor: pointer;
+  animation: escolhido-sobe 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+/* o anel exterior do comunicador */
+.calls__escolhido::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 45%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.calls__escolhido svg {
+  width: 62%;
+  height: 62%;
+}
+
+.calls__escolhido:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--accent-base) 80%, #fff);
+  outline-offset: 3px;
+}
+
+@keyframes escolhido-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.calls__escolhidosAcoes {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-}
-
-.calls__marcadosItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px 3px 3px;
-  border: 1px solid color-mix(in oklch, var(--accent-base) 55%, transparent);
-  border-radius: 999px;
-  background: color-mix(in oklch, var(--accent-base) 14%, transparent);
-  color: color-mix(in oklch, var(--accent-base) 80%, #fff);
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.calls__marcadosItem svg {
-  width: 22px;
-  height: 22px;
-}
-
-.calls__marcadosAcoes {
-  display: inline-flex;
   align-items: center;
   gap: 8px;
+  animation: panel-in 0.16s ease-out both;
 }
 
-.calls__marcadosAcoes .calls__callBtn {
+.calls__escolhidosAcoes .calls__callBtn {
   padding: 8px 14px;
   font-size: 12px;
 }

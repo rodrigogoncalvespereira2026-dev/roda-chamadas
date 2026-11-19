@@ -150,6 +150,8 @@ function CallsApp() {
   const myPlaceRef = useRef(myPlace);
   /* último círculo tocado — é o que distingue um toque de um toque duplo */
   const toqueRef = useRef(null);
+  /* a lista de marcados à mão: um toque duplo depressa não espera pelo render */
+  const selecionadosRef = useRef([]);
 
   useEffect(() => {
     callRef.current = call;
@@ -168,6 +170,9 @@ function CallsApp() {
   useEffect(() => {
     myPlaceRef.current = myPlace;
   }, [myPlace]);
+  useEffect(() => {
+    selecionadosRef.current = selecionados;
+  }, [selecionados]);
 
   /**
    * A roda mantém SEMPRE a ordem original dos temas — o servidor manda o time
@@ -686,7 +691,7 @@ function CallsApp() {
     (ultimo) => {
       const eu = identityRef.current?.hero;
 
-      const lista = [...new Set([...selecionados, ultimo?.id].filter(Boolean))]
+      const lista = [...new Set([...selecionadosRef.current, ultimo?.id].filter(Boolean))]
         .filter((hero) => hero !== eu)
         .slice(0, ROOM_SIZE - 1);
 
@@ -717,7 +722,7 @@ function CallsApp() {
 
       startCall(lista, kind);
     },
-    [estadoDe, kind, selecionados, startCall]
+    [estadoDe, kind, startCall]
   );
 
   /**
@@ -745,19 +750,23 @@ function CallsApp() {
 
       setNotice("");
 
-      if (selecionados.includes(theme.id)) {
-        setSelecionados(selecionados.filter((hero) => hero !== theme.id));
-        return;
-      }
-
-      if (selecionados.length >= ROOM_SIZE - 1) {
+      // limites lidos do que já está marcado; a soma em si é feita sobre o
+      // valor mais recente, para dois toques seguidos não se apagarem
+      if (
+        !selecionadosRef.current.includes(theme.id) &&
+        selecionadosRef.current.length >= ROOM_SIZE - 1
+      ) {
         setNotice(`A chamada leva no máximo ${ROOM_SIZE} heróis, contando com você.`);
         return;
       }
 
-      setSelecionados([...selecionados, theme.id]);
+      setSelecionados((atual) =>
+        atual.includes(theme.id)
+          ? atual.filter((hero) => hero !== theme.id)
+          : [...atual, theme.id]
+      );
     },
-    [chamarEscolhidos, selecionados]
+    [chamarEscolhidos]
   );
 
   const cancelarEscolha = useCallback(() => {
@@ -924,6 +933,27 @@ function CallsApp() {
           aria-labelledby="aba-roda"
           tabIndex={0}
         >
+          {/* os heróis já marcados sobem para uma fila de círculos por cima da
+              roda, como no comunicador da série; o lugar fica reservado para a
+              roda não saltar quando o primeiro sobe */}
+          <div className="calls__escolhidos" role="group" aria-label="Heróis marcados">
+            {selecionados.map((hero, indice) => (
+              <button
+                key={hero}
+                type="button"
+                className="calls__escolhido"
+                style={{ "--accent-base": themeById(hero).accent, "--i": indice }}
+                onClick={() =>
+                  setSelecionados((atual) => atual.filter((item) => item !== hero))
+                }
+                title={`Tirar ${themeById(hero).name}`}
+                aria-label={`Tirar ${themeById(hero).name} da chamada`}
+              >
+                <ThemeIcon id={hero} />
+              </button>
+            ))}
+          </div>
+
           <div className="calls__wheelBox">
             <ThemeWheel
               themes={wheelThemes}
@@ -936,38 +966,23 @@ function CallsApp() {
           </div>
 
           {selecionados.length ? (
-            <div className="calls__marcados" role="group" aria-label="Heróis marcados">
-              <span className="calls__marcadosLista">
-                {selecionados.map((hero) => (
-                  <span
-                    key={hero}
-                    className="calls__marcadosItem"
-                    style={{ "--accent-base": themeById(hero).accent }}
-                  >
-                    <ThemeIcon id={hero} />
-                    {themeById(hero).name}
-                  </span>
-                ))}
-              </span>
-
-              <span className="calls__marcadosAcoes">
-                <button
-                  type="button"
-                  className="calls__ghostBtn"
-                  onClick={() => setSelecionados([])}
-                >
-                  Limpar
-                </button>
-                <button
-                  type="button"
-                  className="calls__callBtn"
-                  onClick={() => chamarEscolhidos(null)}
-                  disabled={connection !== "online"}
-                >
-                  <PhoneIcon />
-                  Chamar {selecionados.length}
-                </button>
-              </span>
+            <div className="calls__escolhidosAcoes">
+              <button
+                type="button"
+                className="calls__ghostBtn"
+                onClick={() => setSelecionados([])}
+              >
+                Limpar
+              </button>
+              <button
+                type="button"
+                className="calls__callBtn"
+                onClick={() => chamarEscolhidos(null)}
+                disabled={connection !== "online"}
+              >
+                <PhoneIcon />
+                Chamar {selecionados.length}
+              </button>
             </div>
           ) : null}
 

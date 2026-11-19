@@ -1,9 +1,9 @@
 {
-  "versao": "1.42",
-  "codigo": 43,
+  "versao": "1.43",
+  "codigo": 44,
   "novidades": [
-    "Toque em vários círculos para marcar os heróis que quer chamar, e toque duas vezes no último para ligar a todos",
-    "Os heróis marcados aparecem numa fila por baixo da roda, com o botão Chamar e o Limpar",
-    "A roda já não gira a cada toque: os círculos ficam onde estão, o que torna o toque duplo fácil de acertar"
+    "Os heróis marcados sobem agora para uma fila de círculos por cima da roda, como no comunicador da série",
+    "Tocar num desses círculos tira o herói da chamada",
+    "Marcar vários heróis seguidos já não perde os primeiros"
   ]
 }
