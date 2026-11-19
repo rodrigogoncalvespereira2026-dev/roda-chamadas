@@ -90,11 +90,17 @@ function personOf(account) {
 /** A roda inteira: todos os heróis, com o estado de quem está por trás. */
 function rosterFor(self) {
   const people = [...HEROES.values()]
-    .map((theme) => ({
-      hero: theme.id,
-      name: theme.name,
-      status: statusOf(users.get(theme.id)),
-    }));
+    .map((theme) => {
+      const account = users.get(theme.id);
+
+      return {
+        hero: theme.id,
+        name: theme.name,
+        status: statusOf(account),
+        // a posição que cada herói partilhou (o mapa mostra todos os que têm)
+        place: account?.place ?? null,
+      };
+    });
 
   people.sort((a, b) => {
     if (a.status !== b.status) return a.status === "offline" ? 1 : -1;
@@ -491,6 +497,21 @@ wss.on("connection", (ws) => {
         return;
       }
 
+      case "place": {
+        const lugar = safePlace(message.place);
+
+        if (!lugar) {
+          if (!user.place) return;
+          user.place = null;
+          broadcastPresence();
+          return;
+        }
+
+        user.place = lugar;
+        broadcastPresence();
+        return;
+      }
+
       case "call": {
         if ([...calls.values()].some((call) => inCall(call, user.hero) || call.invited.has(user.hero))) {
           fail(ws, "Você já está numa chamada. Encerre para ligar de novo.");
@@ -658,6 +679,8 @@ wss.on("connection", (ws) => {
     if (!user || user.ws !== ws) return;
 
     user.ws = null;
+    // sai do mapa ao sair: posição de quem não está ligado só enganava
+    user.place = null;
 
     for (const call of [...calls.values()]) {
       if (inCall(call, user.hero) || call.invited.has(user.hero)) {

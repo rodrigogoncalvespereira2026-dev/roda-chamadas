@@ -1,9 +1,9 @@
 {
-  "versao": "1.45",
-  "codigo": 46,
+  "versao": "1.46",
+  "codigo": 47,
   "novidades": [
-    "A chamada pode agora levar até 15 heróis além de você — 16 no canal",
-    "Com muitos marcados, os círculos de cima ficam mais pequenos e passam para duas filas, sem empurrar a roda para fora do ecrã",
-    "Numa chamada cheia, as bolhas dos participantes alinham-se em filas em vez de arco"
+    "O mapa passa a mostrar todos os heróis que partilham a posição, cada um com a hora a que o ponto foi lido",
+    "Ao abrir o Mapa, a app pede a tua posição e partilha-a com o resto do time",
+    "Quem sai da app desaparece do mapa, para não ficar um ponto esquecido"
   ]
 }

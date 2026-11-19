@@ -367,6 +367,21 @@ function CallsApp() {
     rtRef.current.send("message", { to: hero, text });
   }, []);
 
+  /**
+   * As posições chegam com a presença: cada herói que partilhou a sua aparece no
+   * mapa de todos, com o ponto renovado de cada vez que se mexe.
+   */
+  const juntarLugares = useCallback((lista) => {
+    const comLugar = (lista ?? []).filter((person) => person?.place);
+    if (!comLugar.length) return;
+
+    setPlaces((atual) => {
+      const proximo = { ...atual };
+      for (const person of comLugar) proximo[person.hero] = person.place;
+      return proximo;
+    });
+  }, []);
+
   /* ---------- presença e eventos do servidor ---------- */
 
   useEffect(() => {
@@ -386,6 +401,7 @@ function CallsApp() {
       rt.on("welcome", (data) => {
         setMe(data.you);
         setPeople(data.people);
+        juntarLugares(data.people);
         iceRef.current = data.iceServers ?? [];
         setNotice("");
 
@@ -402,6 +418,7 @@ function CallsApp() {
       rt.on("people", (data) => {
         setMe(data.you);
         setPeople(data.people);
+        juntarLugares(data.people);
       })
     );
 
@@ -553,7 +570,7 @@ function CallsApp() {
     if (rt.status === "online") join();
 
     return () => offs.forEach((off) => off());
-  }, [appendMessage, closeSession, notify, openSession, vibrate]);
+  }, [appendMessage, closeSession, juntarLugares, notify, openSession, vibrate]);
 
   /* No APK, deixa o canal de avisos e a permissão prontos desde o arranque. */
   useEffect(() => {
@@ -680,6 +697,19 @@ function CallsApp() {
       setGeoError(geoIssue ?? "Não foi possível ler a localização.");
     }
   }, []);
+
+  /* A minha posição vai para o servidor: é assim que os outros me vêem no mapa. */
+  useEffect(() => {
+    if (!sharePlace || !myPlace || !me) return;
+    rtRef.current.send("place", { place: myPlace });
+  }, [me, myPlace, sharePlace]);
+
+  /* Abrir o mapa é o momento natural de pedir e partilhar a posição. */
+  useEffect(() => {
+    if (tab !== "mapa" || definicoes || call) return;
+    if (myPlaceRef.current || locating) return;
+    locate();
+  }, [call, definicoes, locate, locating, tab]);
 
   /* ---------- roda: marcar heróis e chamar ---------- */
 
