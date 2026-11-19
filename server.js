@@ -40,8 +40,8 @@ const PORT = Number(process.env.PORT) || 10000;
 /** Os vinte heróis, por id. */
 const HEROES = new Map(THEMES.map((theme) => [theme.id, theme]));
 
-/** Quem cabe numa chamada (quem liga + 5). */
-const MAX_ROOM = 6;
+/** Quem cabe numa chamada (quem liga + 15). */
+const MAX_ROOM = 16;
 const MAX_MESSAGE = 500;
 
 /** STUN público: descobre o endereço de fora para o WebRTC furar o NAT. */

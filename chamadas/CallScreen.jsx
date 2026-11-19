@@ -393,7 +393,10 @@ export default function CallScreen({
         )}
 
         {satelites.length ? (
-          <ul className="palco__satelites" aria-label="Outros participantes">
+          <ul
+            className={`palco__satelites${satelites.length > 6 ? " palco__satelites--muitos" : ""}`}
+            aria-label="Outros participantes"
+          >
             {satelites.map((peer, indice) => {
               /* arco suave: as pontas descem, o meio fica mais alto */
               const desvio = indice - (satelites.length - 1) / 2;
@@ -405,7 +408,8 @@ export default function CallScreen({
                   data-state={peer.state}
                   style={{
                     "--accent-base": themeById(peer.hero).accent,
-                    "--desvio": `${Math.abs(desvio) * 7}px`,
+                    // em chamada cheia, filas direitas em vez do arco
+                    "--desvio": satelites.length > 6 ? "0px" : `${Math.abs(desvio) * 7}px`,
                   }}
                   title={`${themeById(peer.hero).name} · ${PEER_STATE[peer.state] ?? "no canal"}`}
                 >

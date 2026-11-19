@@ -1386,6 +1386,17 @@ body {
   border-color: #ff8f9a;
 }
 
+/* chamada cheia (até 15 do outro lado): bolhas mais pequenas e em filas, sem
+   o arco — com tantas, o desvio vertical só criava uma confusão */
+.palco__satelites--muitos {
+  gap: 8px;
+}
+
+.palco__satelites--muitos .palco__satelite {
+  width: clamp(42px, 11vw, 54px);
+  transform: none;
+}
+
 /* o meu vídeo: retângulo pequeno a flutuar, no mesmo formato do palco */
 .palco__eu {
   position: absolute;
@@ -3720,6 +3731,21 @@ body.mapaCheio .calls__panel {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* com muitos marcados (até 15) os círculos encolhem para caber sem empurrar
+   a roda para fora do ecrã */
+.calls__escolhidos--muitos {
+  gap: 7px;
+  min-height: 0;
+}
+
+.calls__escolhidos--muitos .calls__escolhido {
+  width: clamp(40px, 10vw, 50px);
+}
+
+.calls__escolhidos--muitos .calls__escolhido::after {
+  inset: -3px;
 }
 
 .calls__escolhidosAcoes {

@@ -46,8 +46,8 @@ import "./chamadas.css";
  * A identidade é o herói: quem entra escolhe um, sem nome de pessoa nem senha.
  */
 
-/** Quantos heróis cabem numa chamada (o mesmo limite do servidor). */
-const ROOM_SIZE = 6;
+/** Quantos heróis cabem numa chamada (o mesmo limite do servidor: 15 + você). */
+const ROOM_SIZE = 16;
 /** Dois toques no mesmo círculo dentro deste tempo chamam os marcados. */
 const DUPLO_MS = 420;
 
@@ -763,7 +763,7 @@ function CallsApp() {
         !selecionadosRef.current.includes(theme.id) &&
         selecionadosRef.current.length >= ROOM_SIZE - 1
       ) {
-        setNotice(`A chamada leva no máximo ${ROOM_SIZE} heróis, contando com você.`);
+        setNotice(`A chamada leva no máximo ${ROOM_SIZE - 1} heróis além de você.`);
         return;
       }
 
@@ -943,7 +943,11 @@ function CallsApp() {
           {/* os heróis já marcados sobem para uma fila de círculos por cima da
               roda, como no comunicador da série; o lugar fica reservado para a
               roda não saltar quando o primeiro sobe */}
-          <div className="calls__escolhidos" role="group" aria-label="Heróis marcados">
+          <div
+            className={`calls__escolhidos${selecionados.length > 6 ? " calls__escolhidos--muitos" : ""}`}
+            role="group"
+            aria-label="Heróis marcados"
+          >
             {selecionados.map((hero, indice) => (
               <button
                 key={hero}

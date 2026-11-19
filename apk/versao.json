@@ -1,9 +1,9 @@
 {
-  "versao": "1.44",
-  "codigo": 45,
+  "versao": "1.45",
+  "codigo": 46,
   "novidades": [
-    "O círculo escolhido sai da roda e sobe para a fila de cima — a roda fica só com quem ainda não foi marcado",
-    "Tocar no círculo que está em cima devolve o herói à roda",
-    "O círculo sobe do lugar da roda, para se ver a escolha a acontecer"
+    "A chamada pode agora levar até 15 heróis além de você — 16 no canal",
+    "Com muitos marcados, os círculos de cima ficam mais pequenos e passam para duas filas, sem empurrar a roda para fora do ecrã",
+    "Numa chamada cheia, as bolhas dos participantes alinham-se em filas em vez de arco"
   ]
 }
