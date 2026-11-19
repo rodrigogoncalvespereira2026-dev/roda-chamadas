@@ -14,6 +14,7 @@
 */
 
 import { createSign } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 /** Conta de serviço do Firebase (só depois de ligarPush). */
 let conta = null;
@@ -27,33 +28,100 @@ const dono = new Map();
 /** Token de acesso em cache, com a validade que o Google disser. */
 let acesso = null;
 
-/** Lê a chave da conta de serviço. Devolve se o push ficou disponível. */
-export function ligarPush() {
-  const bruto = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!bruto) {
-    console.log("Sem FIREBASE_SERVICE_ACCOUNT: avisos só com a app aberta.");
-    return false;
+/**
+ * Onde anda a chave: a variável de ambiente ou um Secret File do Render.
+ *
+ * A variável é o primeiro sítio, mas um JSON de conta de serviço tem várias
+ * linhas e aspas — colado à mão num campo do painel chega muitas vezes cortado
+ * ou entre aspas. O Secret File entrega o ficheiro tal e qual, sem esse risco.
+ */
+const FICHEIROS_DA_CHAVE = [
+  "/etc/secrets/firebase-service-account.json",
+  "/etc/secrets/firebase.json",
+  "firebase-service-account.json",
+];
+
+/** Todas as fontes da chave, pela ordem em que são tentadas. */
+function fontesDaChave() {
+  const fontes = [];
+
+  const env = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (env && env.trim()) {
+    fontes.push({ origem: "variável FIREBASE_SERVICE_ACCOUNT", texto: env.trim() });
+  }
+
+  for (const caminho of FICHEIROS_DA_CHAVE) {
+    try {
+      fontes.push({ origem: `ficheiro ${caminho}`, texto: readFileSync(caminho, "utf8").trim() });
+    } catch {
+      /* não existe: salta */
+    }
+  }
+
+  return fontes;
+}
+
+/** Interpreta um JSON de conta de serviço, ou devolve null. */
+function lerConta(texto) {
+  let limpo = texto;
+
+  // colar uma string com aspas à volta é o engano mais comum
+  if (limpo.startsWith('"') && limpo.endsWith('"')) {
+    try {
+      limpo = JSON.parse(limpo);
+    } catch {
+      /* fica como está, para a mensagem de erro fazer sentido */
+    }
   }
 
   try {
-    conta = JSON.parse(bruto);
-    projeto = conta.project_id;
+    const lida = JSON.parse(limpo);
+    if (!lida?.client_email || !lida?.private_key || !lida?.project_id) return null;
+    return lida;
   } catch {
-    conta = null;
-    projeto = null;
-    console.error("[push] FIREBASE_SERVICE_ACCOUNT não é um JSON válido.");
+    return null;
+  }
+}
+
+/**
+ * Lê a chave da conta de serviço. Devolve se o push ficou disponível.
+ *
+ * A variável de ambiente vem primeiro, mas se ela estiver estragada (colagem
+ * cortada, aspas a mais) tenta-se o Secret File em vez de desistir — assim uma
+ * variável mal colada não impede o ficheiro bom de funcionar.
+ */
+export function ligarPush() {
+  const fontes = fontesDaChave();
+
+  if (!fontes.length) {
+    console.log("Sem chave do Firebase: avisos só com a app aberta.");
     return false;
   }
 
-  if (!conta?.client_email || !conta?.private_key || !projeto) {
-    conta = null;
-    projeto = null;
-    console.error("[push] à conta de serviço falta client_email, private_key ou project_id.");
-    return false;
+  for (const fonte of fontes) {
+    const lida = lerConta(fonte.texto);
+
+    if (!lida) {
+      console.error(
+        `[push] ${fonte.origem}: não é um JSON de conta de serviço válido ` +
+          `(${fonte.texto.length} caracteres, começa em ${JSON.stringify(fonte.texto.slice(0, 12))}).`
+      );
+      continue;
+    }
+
+    conta = lida;
+    projeto = lida.project_id;
+    console.log(`[push] ligado ao projeto ${projeto} (${fonte.origem})`);
+    return true;
   }
 
-  console.log(`[push] ligado ao projeto ${projeto}`);
-  return true;
+  conta = null;
+  projeto = null;
+  console.error(
+    "[push] nenhuma chave válida. O mais seguro é um Secret File chamado " +
+      "firebase-service-account.json com o JSON completo da conta de serviço."
+  );
+  return false;
 }
 
 export const temPush = () => Boolean(conta);
