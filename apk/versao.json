@@ -1,9 +1,9 @@
 {
-  "versao": "1.41",
-  "codigo": 42,
+  "versao": "1.42",
+  "codigo": 43,
   "novidades": [
-    "O aviso de chamada passou a ter som próprio, com as duas notas do comunicador — os relógios costumam ignorar avisos silenciosos",
-    "O canal de notificações mudou de nome porque o Android não deixa mudar o som de um canal já criado",
-    "O símbolo do herói e a vibração continuam iguais"
+    "Toque em vários círculos para marcar os heróis que quer chamar, e toque duas vezes no último para ligar a todos",
+    "Os heróis marcados aparecem numa fila por baixo da roda, com o botão Chamar e o Limpar",
+    "A roda já não gira a cada toque: os círculos ficam onde estão, o que torna o toque duplo fácil de acertar"
   ]
 }

@@ -389,15 +389,18 @@ export default function ThemeWheel({
         return;
       }
 
+      // Com seleção múltipla, o clique só alterna — e a roda NÃO gira: o
+      // círculo tem de ficar debaixo do dedo, senão o segundo toque do toque
+      // duplo cai noutra opção.
+      if (onToggle) {
+        const theme = themes[index];
+        if (theme) onToggle(theme);
+        return;
+      }
+
       const next = goTo(index);
       const theme = themes[next];
       if (!theme) return;
-
-      // Com seleção múltipla, todo clique alterna o item e o traz para a frente.
-      if (onToggle) {
-        onToggle(theme);
-        return;
-      }
 
       // Sem isso, clicar no item da frente ativa de verdade (chamar).
       if (theme.id === selectedTheme) onActivate?.(theme);
@@ -409,6 +412,9 @@ export default function ThemeWheel({
   /* ----- o tema escolhido manda na rotação ----- */
 
   useEffect(() => {
+    // No modo de marcar vários, a roda só gira com a mão: girar sozinha a cada
+    // toque afastava o círculo de debaixo do dedo.
+    if (onToggle) return;
     if (!total || !angle) return;
 
     const index = themes.findIndex((theme) => theme.id === selectedTheme);
@@ -417,7 +423,7 @@ export default function ThemeWheel({
     const value = rotationFor(index);
     rotationRef.current = value;
     startTransition(() => setRotation(value));
-  }, [angle, rotationFor, selectedTheme, themes, total]);
+  }, [angle, onToggle, rotationFor, selectedTheme, themes, total]);
 
   /* ----- medidas viram custom properties ----- */
 

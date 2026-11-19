@@ -48,8 +48,8 @@ import "./chamadas.css";
 
 /** Quantos heróis cabem numa chamada (o mesmo limite do servidor). */
 const ROOM_SIZE = 6;
-/** Toque longo no círculo central chama todos. */
-const HOLD_MS = 550;
+/** Dois toques no mesmo círculo dentro deste tempo chamam os marcados. */
+const DUPLO_MS = 420;
 
 /**
  * Identidade da aba: sobrevive a recargas, mas é diferente em cada aba.
@@ -119,6 +119,8 @@ function CallsApp() {
   const [focusHero, setFocusHero] = useState("");
   /* herói tocado na roda: fica sozinho no ecrã até a chamada abrir */
   const [escolhido, setEscolhido] = useState(null);
+  /* heróis marcados na roda: os que vão ser chamados juntos */
+  const [selecionados, setSelecionados] = useState([]);
   const [kind, setKind] = useState("video");
   const [sharePlace, setSharePlace] = useState(true);
 
@@ -146,6 +148,8 @@ function CallsApp() {
   const identityRef = useRef(identity);
   const iceRef = useRef([]);
   const myPlaceRef = useRef(myPlace);
+  /* último círculo tocado — é o que distingue um toque de um toque duplo */
+  const toqueRef = useRef(null);
 
   useEffect(() => {
     callRef.current = call;
@@ -665,11 +669,62 @@ function CallsApp() {
     }
   }, []);
 
-  /* ---------- roda: marcar, ligar, chamar todos ---------- */
+  /* ---------- roda: marcar heróis e chamar ---------- */
 
   const onWheelSelect = useCallback((theme) => setFocusHero(theme.id), []);
 
-  const onWheelActivate = useCallback(
+  const estadoDe = useCallback(
+    (hero) => peopleRef.current.find((person) => person.hero === hero)?.status ?? "offline",
+    []
+  );
+
+  /**
+   * Liga aos heróis marcados. `ultimo` entra sempre: é o círculo do toque duplo,
+   * mesmo que o primeiro toque o tenha acabado de marcar.
+   */
+  const chamarEscolhidos = useCallback(
+    (ultimo) => {
+      const eu = identityRef.current?.hero;
+
+      const lista = [...new Set([...selecionados, ultimo?.id].filter(Boolean))]
+        .filter((hero) => hero !== eu)
+        .slice(0, ROOM_SIZE - 1);
+
+      if (!lista.length) {
+        setNotice("Toque nos círculos para marcar quem quer chamar.");
+        return;
+      }
+
+      if (callRef.current) return;
+
+      if (lista.every((hero) => estadoDe(hero) === "offline")) {
+        setNotice(
+          `Ninguém dessa escolha está online agora: ${lista.map((hero) => themeById(hero).name).join(", ")}.`
+        );
+        return;
+      }
+
+      setNotice("");
+      setSelecionados([]);
+
+      /* um herói só: o círculo dele fica sozinho no ecrã, como sempre; a
+         chamada a vários segue directa para o palco */
+      setEscolhido(
+        lista.length === 1
+          ? { hero: lista[0], name: themeById(lista[0]).name, status: estadoDe(lista[0]) }
+          : null
+      );
+
+      startCall(lista, kind);
+    },
+    [estadoDe, kind, selecionados, startCall]
+  );
+
+  /**
+   * Um toque marca ou desmarca o círculo; dois toques depressa no mesmo círculo
+   * chamam os marcados — o gesto de fechar a escolha.
+   */
+  const onWheelToggle = useCallback(
     (theme) => {
       setFocusHero(theme.id);
 
@@ -678,17 +733,31 @@ function CallsApp() {
         return;
       }
 
-      if (callRef.current) return;
+      const agora = performance.now();
+      const anterior = toqueRef.current;
+      toqueRef.current = { id: theme.id, em: agora };
 
-      // os outros círculos desaparecem: fica só o escolhido
-      setEscolhido({ hero: theme.id, name: theme.name, status: theme.status });
+      if (anterior && anterior.id === theme.id && agora - anterior.em < DUPLO_MS) {
+        toqueRef.current = null;
+        chamarEscolhidos(theme);
+        return;
+      }
+
       setNotice("");
 
-      if (theme.status === "offline") return;
+      if (selecionados.includes(theme.id)) {
+        setSelecionados(selecionados.filter((hero) => hero !== theme.id));
+        return;
+      }
 
-      startCall([theme.id], kind);
+      if (selecionados.length >= ROOM_SIZE - 1) {
+        setNotice(`A chamada leva no máximo ${ROOM_SIZE} heróis, contando com você.`);
+        return;
+      }
+
+      setSelecionados([...selecionados, theme.id]);
     },
-    [kind, startCall]
+    [chamarEscolhidos, selecionados]
   );
 
   const cancelarEscolha = useCallback(() => {
@@ -835,8 +904,9 @@ function CallsApp() {
                   </span>
                   <strong className="calls__settingsApp">Roda de Chamadas</strong>
                   <span className="calls__sub">
-                    Gire a roda, toque no círculo central para ligar e segure para chamar todo o
-                    time. O brilho de cada círculo mostra quem está disponível agora.
+                    Gire a roda e toque nos círculos para marcar os heróis: um toque marca, outro
+                    desmarca, e dois toques no último ligam a todos. O brilho de cada círculo mostra
+                    quem está disponível agora.
                   </span>
                   <span className="calls__settingsVersion">Versão {VERSAO_APP.nome}</span>
                 </span>
@@ -858,11 +928,48 @@ function CallsApp() {
             <ThemeWheel
               themes={wheelThemes}
               selectedTheme={focus?.hero}
+              selectedIds={selecionados}
               onSelect={onWheelSelect}
-              onActivate={onWheelActivate}
+              onToggle={onWheelToggle}
               label="Heróis"
             />
           </div>
+
+          {selecionados.length ? (
+            <div className="calls__marcados" role="group" aria-label="Heróis marcados">
+              <span className="calls__marcadosLista">
+                {selecionados.map((hero) => (
+                  <span
+                    key={hero}
+                    className="calls__marcadosItem"
+                    style={{ "--accent-base": themeById(hero).accent }}
+                  >
+                    <ThemeIcon id={hero} />
+                    {themeById(hero).name}
+                  </span>
+                ))}
+              </span>
+
+              <span className="calls__marcadosAcoes">
+                <button
+                  type="button"
+                  className="calls__ghostBtn"
+                  onClick={() => setSelecionados([])}
+                >
+                  Limpar
+                </button>
+                <button
+                  type="button"
+                  className="calls__callBtn"
+                  onClick={() => chamarEscolhidos(null)}
+                  disabled={connection !== "online"}
+                >
+                  <PhoneIcon />
+                  Chamar {selecionados.length}
+                </button>
+              </span>
+            </div>
+          ) : null}
 
           {notice ? (
             <p className="calls__aviso" role="status" aria-live="polite">
@@ -870,7 +977,10 @@ function CallsApp() {
             </p>
           ) : null}
 
-          <p className="calls__dica">Gire a roda e toque no círculo da frente para ligar.</p>
+          <p className="calls__dica">
+            Toque nos círculos para marcar os heróis. Dois toques no último — ou em Chamar — para
+            ligar.
+          </p>
 
           {connection !== "online" ? (
             <p className="calls__aviso">À procura do servidor…</p>

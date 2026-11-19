@@ -3653,8 +3653,56 @@ body.mapaCheio .calls__panel {
   width: 100%;
 }
 
+/* heróis marcados na roda: quem vai ser chamado quando o gesto fechar */
+.calls__marcados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: min(94vw, 560px);
+  animation: panel-in 0.18s ease-out both;
+}
+
+.calls__marcadosLista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.calls__marcadosItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid color-mix(in oklch, var(--accent-base) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--accent-base) 14%, transparent);
+  color: color-mix(in oklch, var(--accent-base) 80%, #fff);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.calls__marcadosItem svg {
+  width: 22px;
+  height: 22px;
+}
+
+.calls__marcadosAcoes {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calls__marcadosAcoes .calls__callBtn {
+  padding: 8px 14px;
+  font-size: 12px;
+}
+
 .calls__dica {
-  max-width: 26ch;
+  max-width: 30ch;
   margin: 6px 0 0;
   color: color-mix(in oklch, var(--accent-base) 55%, #6a6a6a);
   font-size: 12px;
