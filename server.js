@@ -34,6 +34,7 @@ import {
   mensagensPendentes,
   temBase,
 } from "./db.js";
+import { avisar, guardarToken, ligarPush } from "./push.js";
 
 const PORT = Number(process.env.PORT) || 10000;
 
@@ -493,7 +494,22 @@ wss.on("connection", (ws) => {
           // fica à espera na memória, com o id da base para marcar na entrega
           alvo.inbox.push({ from, text, at, base: naBase });
           alvo.inbox = alvo.inbox.slice(-50);
+
+          // app fechada: o aviso vai pelo telefone, não pelo WebSocket
+          avisar(destino, {
+            titulo: `Recado de ${from.name}`,
+            corpo: text.length > 120 ? `${text.slice(0, 117)}…` : text,
+            canal: "recados",
+            dados: { tipo: "recado", de: user.hero },
+          }).catch(() => {});
         }
+        return;
+      }
+
+      case "push-token": {
+        // o APK manda o token do aparelho ao entrar: é por aqui que o aviso
+        // chega com a app fechada
+        guardarToken(user.hero, message.token);
         return;
       }
 
@@ -541,8 +557,30 @@ wss.on("connection", (ws) => {
         }
 
         if (!livres.length) {
+          // todos fora da app: deixa o aviso no telefone deles, para saberem
+          // que alguém tentou ligar (e poderem abrir a app)
+          for (const alvo of fora) {
+            avisar(alvo.hero, {
+              titulo: `Chamada de ${personOf(user).name}`,
+              corpo:
+                message.kind === "voice"
+                  ? "Tentou ligar-te no Roda de Chamadas. Abre a app para atender."
+                  : "Videochamada no Roda de Chamadas. Abre a app para atender.",
+              dados: { tipo: "chamada", de: user.hero },
+            }).catch(() => {});
+          }
+
           fail(ws, "Todos os heróis marcados estão offline ou em chamada.");
           return;
+        }
+
+        // quem está fora também fica a saber que foi chamado
+        for (const alvo of fora) {
+          avisar(alvo.hero, {
+            titulo: `Chamada de ${personOf(user).name}`,
+            corpo: "Tentou ligar-te no Roda de Chamadas. Abre a app para atender.",
+            dados: { tipo: "chamada", de: user.hero },
+          }).catch(() => {});
         }
 
         const call = {
@@ -720,4 +758,7 @@ server.listen(PORT, () => {
   } else {
     console.log("Sem MONGODB_URI: recados e chamadas ficam só em memória.");
   }
+
+  // avisos com a app fechada (sem chave do Firebase, fica desligado)
+  ligarPush();
 });
