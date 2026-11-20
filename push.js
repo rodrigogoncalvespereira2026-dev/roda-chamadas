@@ -72,6 +72,17 @@ carregarTokens();
 let acesso = null;
 
 /**
+ * Últimas tentativas de aviso (sem tokens), para o /healthz dizer o que
+ * aconteceu: se saiu, para quem, e o que o Google respondeu se falhou.
+ */
+const recentes = [];
+
+function lembrar(entrada) {
+  recentes.push(entrada);
+  if (recentes.length > 12) recentes.shift();
+}
+
+/**
  * Onde anda a chave: a variável de ambiente ou um Secret File do Render.
  *
  * A variável é o primeiro sítio, mas um JSON de conta de serviço tem várias
@@ -181,6 +192,12 @@ export const totalTokens = () => [...tokens.values()].reduce((soma, lista) => so
  */
 export const temToken = (hero) => Boolean(tokens.get(hero)?.size);
 
+/** Heróis que têm pelo menos um telemóvel registado (para o /healthz). */
+export const heroesComToken = () => [...tokens.keys()];
+
+/** Últimas tentativas de aviso, para se ver no /healthz o que aconteceu. */
+export const ultimosAvisos = () => [...recentes].reverse();
+
 /** Um aparelho passa a receber avisos em nome deste herói. */
 export function guardarToken(hero, token) {
   if (!hero || typeof token !== "string" || token.length < 20) return;
@@ -268,20 +285,39 @@ export async function avisar(
   hero,
   { titulo, corpo, canal = "chamadas-alerta", dados = {}, soDados = false }
 ) {
-  if (!conta) return 0;
+  const anotar = (enviados, erro) =>
+    lembrar({
+      em: Date.now(),
+      hero,
+      titulo,
+      modo: soDados ? "ecra" : "aviso",
+      aparelhos: tokensDe(hero).length,
+      enviados,
+      erro: erro ?? null,
+    });
+
+  if (!conta) {
+    anotar(0, "push desligado (sem chave)");
+    return 0;
+  }
 
   const lista = tokensDe(hero);
-  if (!lista.length) return 0;
+  if (!lista.length) {
+    anotar(0, "sem telemóvel registado");
+    return 0;
+  }
 
   let acessoAtual;
   try {
     acessoAtual = await tokenDeAcesso();
   } catch (erro) {
     console.error("[push] sem token de acesso:", erro?.message ?? erro);
+    anotar(0, `OAuth: ${erro?.message ?? erro}`);
     return 0;
   }
 
   let enviados = 0;
+  let ultimoErro = null;
 
   for (const token of lista) {
     /*
@@ -343,13 +379,17 @@ export async function avisar(
       // token morto: o aparelho desinstalou ou renovou o token
       if (estado === "NOT_FOUND" || estado === "UNREGISTERED" || resposta.status === 404) {
         esquecerToken(hero, token);
+        ultimoErro = "aparelho sem registo válido";
       } else {
+        ultimoErro = `${estado}: ${dadosErro?.error?.message ?? ""}`.trim();
         console.error("[push] falhou:", estado, dadosErro?.error?.message ?? "");
       }
     } catch (erro) {
+      ultimoErro = `rede: ${erro?.message ?? erro}`;
       console.error("[push] erro de rede:", erro?.message ?? erro);
     }
   }
 
+  anotar(enviados, enviados ? null : ultimoErro);
   return enviados;
 }

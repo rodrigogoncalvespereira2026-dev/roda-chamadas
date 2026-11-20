@@ -34,7 +34,16 @@ import {
   mensagensPendentes,
   temBase,
 } from "./db.js";
-import { avisar, guardarToken, ligarPush, temPush, temToken, totalTokens } from "./push.js";
+import {
+  avisar,
+  guardarToken,
+  heroesComToken,
+  ligarPush,
+  temPush,
+  temToken,
+  totalTokens,
+  ultimosAvisos,
+} from "./push.js";
 
 const PORT = Number(process.env.PORT) || 10000;
 
@@ -315,6 +324,9 @@ const server = createServer(async (req, res) => {
         // diagnóstico dos avisos: a chave está ligada? há telemóveis registados?
         push: temPush(),
         tokens: totalTokens(),
+        // quem tem telemóvel registado, e o que aconteceu aos últimos avisos
+        registados: heroesComToken(),
+        avisos: ultimosAvisos(),
       })
     );
     return;
@@ -660,6 +672,31 @@ wss.on("connection", (ws) => {
         };
 
         calls.set(call.id, call);
+
+        /*
+          Rede de segurança: o aviso de ecrã inteiro pode não chegar (poupança
+          de bateria de alguns telemóveis descarta mensagens só de dados). Se em
+          8 segundos o herói ainda não estiver na app e a chamada continuar a
+          tocar, vai o aviso normal — pelo menos vê quem está a ligar.
+        */
+        for (const hero of avisados) {
+          const avisoDeReserva = setTimeout(() => {
+            const ainda = calls.get(call.id);
+            if (!ainda || !ainda.invited.has(hero) || users.get(hero)?.ws) return;
+
+            avisar(hero, {
+              titulo: `Chamada de ${personOf(user).name}`,
+              corpo:
+                message.kind === "voice"
+                  ? "Está a ligar-te agora. Toca para atender."
+                  : "Videochamada agora. Toca para atender.",
+              dados: { tipo: "chamada", de: user.hero },
+              soDados: false,
+            }).catch(() => {});
+          }, 8000);
+
+          avisoDeReserva.unref?.();
+        }
 
         abrirChamada({
           id: call.id,
