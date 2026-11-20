@@ -1,10 +1,16 @@
 package br.com.chatnoir.roda;
 
 import android.Manifest;
+import android.app.NotificationManager;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -25,7 +31,40 @@ public class MainActivity extends BridgeActivity {
 
     super.onCreate(savedInstanceState);
     acenderEcra();
+    pedirEcraInteiro();
     pedirPermissoes();
+  }
+
+  /**
+   * Android 14 em diante: uma app que não é a de telefone do telemóvel só abre a
+   * chamada em ecrã inteiro se o utilizador permitir. Pede-se uma vez, na
+   * abertura da app, e nunca mais se incomoda.
+   */
+  private void pedirEcraInteiro() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return;
+
+    NotificationManager gestor = getSystemService(NotificationManager.class);
+    if (gestor == null || gestor.canUseFullScreenIntent()) return;
+
+    SharedPreferences guardado = getSharedPreferences("roda", MODE_PRIVATE);
+    if (guardado.getBoolean("ecra-inteiro-pedido", false)) return;
+    guardado.edit().putBoolean("ecra-inteiro-pedido", true).apply();
+
+    try {
+      startActivity(
+        new Intent(
+          Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+          Uri.parse("package:" + getPackageName())
+        )
+      );
+      Toast.makeText(
+        this,
+        "Ligue \"Permitir notificações em ecrã inteiro\" para a chamada acender o ecrã.",
+        Toast.LENGTH_LONG
+      ).show();
+    } catch (Exception semPagina) {
+      // aparelho sem essa página: fica o aviso na barra
+    }
   }
 
   /**

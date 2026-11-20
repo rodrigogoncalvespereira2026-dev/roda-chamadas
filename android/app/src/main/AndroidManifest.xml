@@ -66,6 +66,8 @@
 
     <!-- a chamada abre em ecrã inteiro, com o telemóvel bloqueado -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- e, se o sistema recusar o ecrã inteiro, acende-se o ecrã para o aviso -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- atualizar a app dentro dela própria: baixa o APK e abre o instalador -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />

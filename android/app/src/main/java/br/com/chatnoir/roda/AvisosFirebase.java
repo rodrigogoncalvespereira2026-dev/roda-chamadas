@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.os.PowerManager;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
@@ -83,6 +84,7 @@ public class AvisosFirebase extends FirebaseMessagingService {
       /* O ecrã acende e a app abre já no ecrã de chamada — é o que faz parecer
          uma chamada a sério, mesmo com o telemóvel bloqueado no bolso. */
       construtor.setFullScreenIntent(tocar, true);
+      acenderEcraSePreciso();
       construtor.setVibrate(new long[] { 0, 800, 400, 800, 400, 800 });
 
       Bitmap simbolo = simboloDoHeroi(de);
@@ -93,6 +95,36 @@ public class AvisosFirebase extends FirebaseMessagingService {
       NotificationManagerCompat.from(this).notify(id, construtor.build());
     } catch (SecurityException semPermissao) {
       // Android 13+ sem POST_NOTIFICATIONS: a app segue, só não avisa
+    }
+  }
+
+  /**
+   * No Android 14 o sistema pode recusar o ecrã inteiro a apps que não são a
+   * app de telefone do telemóvel. Nesse caso o aviso ficaria só na barra, com o
+   * ecrã apagado — e uma chamada não pode passar despercebida. Aqui acende-se o
+   * ecrã à força durante uns segundos, para o aviso ser visto.
+   */
+  @SuppressWarnings("deprecation")
+  private void acenderEcraSePreciso() {
+    try {
+      NotificationManager gestor = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+      boolean podeEcraInteiro =
+        Build.VERSION.SDK_INT < 34 || (gestor != null && gestor.canUseFullScreenIntent());
+
+      if (podeEcraInteiro) return; // o ecrã inteiro já trata de acender e abrir
+
+      PowerManager energia = (PowerManager) getSystemService(POWER_SERVICE);
+      if (energia == null) return;
+
+      PowerManager.WakeLock luz = energia.newWakeLock(
+        PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+          | PowerManager.ACQUIRE_CAUSES_WAKEUP
+          | PowerManager.ON_AFTER_RELEASE,
+        "roda:chamada"
+      );
+      luz.acquire(15000);
+    } catch (Exception semLuz) {
+      // sem isto, fica o aviso na barra e o som
     }
   }
 

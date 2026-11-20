@@ -1,9 +1,9 @@
 {
-  "versao": "1.49",
-  "codigo": 50,
+  "versao": "1.50",
+  "codigo": 51,
   "novidades": [
-    "Quando alguém te liga com a app fechada, o ecrã acende e a chamada abre-se sozinha, em ecrã inteiro, com o símbolo de quem liga",
-    "Funciona também com o telemóvel bloqueado — já não é preciso carregar no aviso",
-    "Os avisos de chamada que cheguem atrasados deixam de tocar: expiram ao fim de um minuto"
+    "O ecrã acende quando te ligam, mesmo que o sistema não deixe a chamada abrir em ecrã inteiro",
+    "No Android 14 ou mais novo, a app pede uma vez autorização para as notificações em ecrã inteiro",
+    "Se a chamada não chegar ao ecrã em 8 segundos, aparece na mesma o aviso na barra"
   ]
 }
