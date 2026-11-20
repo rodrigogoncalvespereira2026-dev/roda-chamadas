@@ -617,6 +617,8 @@ wss.on("connection", (ws) => {
                   ? "Tentou ligar-te no Roda de Chamadas. Abre a app para atender."
                   : "Videochamada no Roda de Chamadas. Abre a app para atender.",
               dados: { tipo: "chamada", de: user.hero },
+              // só dados: o APK acende o ecrã e abre a chamada
+              soDados: true,
             }).catch(() => {});
           }
 
@@ -624,7 +626,7 @@ wss.on("connection", (ws) => {
           return;
         }
 
-        // quem está com a app fechada é avisado pelo telefone
+        // quem está com a app fechada recebe a chamada no telefone, em ecrã inteiro
         for (const hero of avisados) {
           avisar(hero, {
             titulo: `Chamada de ${personOf(user).name}`,
@@ -633,6 +635,7 @@ wss.on("connection", (ws) => {
                 ? "Está a ligar-te agora. Toca para atender."
                 : "Videochamada agora. Toca para atender.",
             dados: { tipo: "chamada", de: user.hero },
+            soDados: true,
           }).catch(() => {});
         }
 
@@ -642,6 +645,7 @@ wss.on("connection", (ws) => {
             titulo: `Chamada de ${personOf(user).name}`,
             corpo: "Tentou ligar-te no Roda de Chamadas. Abre a app para atender.",
             dados: { tipo: "chamada", de: user.hero },
+            soDados: true,
           }).catch(() => {});
         }
 

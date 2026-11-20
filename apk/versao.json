@@ -1,10 +1,9 @@
 {
-  "versao": "1.48",
-  "codigo": 49,
+  "versao": "1.49",
+  "codigo": 50,
   "novidades": [
-    "Um herói com o telemóvel registado fica online na roda mesmo com a app fechada — a chamada chega-lhe pelo aviso do sistema",
-    "Quem abre a app depois de ser chamado encontra o convite à espera, com a chamada ainda a tocar",
-    "O registo do aparelho já não se perde quando o servidor reinicia",
-    "O registo é reenviado sempre que a app reconecta, para os avisos não falharem"
+    "Quando alguém te liga com a app fechada, o ecrã acende e a chamada abre-se sozinha, em ecrã inteiro, com o símbolo de quem liga",
+    "Funciona também com o telemóvel bloqueado — já não é preciso carregar no aviso",
+    "Os avisos de chamada que cheguem atrasados deixam de tocar: expiram ao fim de um minuto"
   ]
 }

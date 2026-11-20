@@ -264,7 +264,10 @@ async function tokenDeAcesso() {
  * `canal` é o id do canal de notificações do APK — o de chamadas toca e vibra
  * como um aviso de chamada; o de recados é discreto.
  */
-export async function avisar(hero, { titulo, corpo, canal = "chamadas-alerta", dados = {} }) {
+export async function avisar(
+  hero,
+  { titulo, corpo, canal = "chamadas-alerta", dados = {}, soDados = false }
+) {
   if (!conta) return 0;
 
   const lista = tokensDe(hero);
@@ -281,21 +284,37 @@ export async function avisar(hero, { titulo, corpo, canal = "chamadas-alerta", d
   let enviados = 0;
 
   for (const token of lista) {
+    /*
+      soDados: a mensagem vai sem `notification`.
+
+      Com `notification`, quem a mostra é o próprio Firebase — uma linha na
+      barra. Sem ela, a mensagem chega ao serviço do APK, que acende o ecrã e
+      abre a chamada em ecrã inteiro. É o que faz o telemóvel tocar como um
+      telefone em vez de só avisar.
+    */
     const mensagem = {
       message: {
         token,
-        notification: { title: titulo, body: corpo },
+        ...(soDados ? {} : { notification: { title: titulo, body: corpo } }),
         data: Object.fromEntries(
-          Object.entries(dados).map(([chave, valor]) => [chave, String(valor ?? "")])
+          Object.entries({ ...dados, titulo, corpo, canal }).map(([chave, valor]) => [
+            chave,
+            String(valor ?? ""),
+          ])
         ),
         android: {
           priority: "HIGH",
-          notification: {
-            channel_id: canal,
-            sound: "default",
-            // abre a app já a tocar para quem atendeu no aviso
-            click_action: "FCM_PLUGIN_ACTIVITY",
-          },
+          ...(soDados
+            ? // um aviso de chamada que chegue tarde não serve para nada
+              { ttl: "60s" }
+            : {
+                notification: {
+                  channel_id: canal,
+                  sound: "default",
+                  // abre a app já a tocar para quem atendeu no aviso
+                  click_action: "FCM_PLUGIN_ACTIVITY",
+                },
+              }),
         },
       },
     };

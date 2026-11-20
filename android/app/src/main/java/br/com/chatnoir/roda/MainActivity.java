@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.WindowManager;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -23,7 +24,25 @@ public class MainActivity extends BridgeActivity {
     registerPlugin(AtualizadorPlugin.class);
 
     super.onCreate(savedInstanceState);
+    acenderEcra();
     pedirPermissoes();
+  }
+
+  /**
+   * Quando a app abre por causa de uma chamada, o ecrã tem de acender e mostrar
+   * a chamada mesmo com o telemóvel bloqueado — é o que faz parecer uma chamada
+   * a sério em vez de um aviso.
+   */
+  private void acenderEcra() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      setShowWhenLocked(true);
+      setTurnScreenOn(true);
+    } else {
+      getWindow().addFlags(
+        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+          | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+      );
+    }
   }
 
   /**
