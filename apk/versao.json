@@ -1,9 +1,10 @@
 {
-  "versao": "1.47",
-  "codigo": 48,
+  "versao": "1.48",
+  "codigo": 49,
   "novidades": [
-    "Avisos com a app fechada: chamar um herói que está fora da app passa a tocar o telemóvel dele",
-    "Ao abrir, a app pede permissão de notificações e regista o aparelho no Firebase",
-    "Os recados também chegam como aviso quando a app está fechada"
+    "Um herói com o telemóvel registado fica online na roda mesmo com a app fechada — a chamada chega-lhe pelo aviso do sistema",
+    "Quem abre a app depois de ser chamado encontra o convite à espera, com a chamada ainda a tocar",
+    "O registo do aparelho já não se perde quando o servidor reinicia",
+    "O registo é reenviado sempre que a app reconecta, para os avisos não falharem"
   ]
 }

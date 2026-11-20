@@ -34,7 +34,7 @@ import {
   mensagensPendentes,
   temBase,
 } from "./db.js";
-import { avisar, guardarToken, ligarPush, temPush, totalTokens } from "./push.js";
+import { avisar, guardarToken, ligarPush, temPush, temToken, totalTokens } from "./push.js";
 
 const PORT = Number(process.env.PORT) || 10000;
 
@@ -60,7 +60,12 @@ const calls = new Map();
 
 /** O estado sai das chamadas: nada de contador desencontrado. */
 function statusOf(account) {
-  if (!account?.ws) return "offline";
+  if (!account) return "offline";
+
+  /* Sem app aberta mas com o telemóvel registado, o herói continua alcançável:
+     a chamada chega-lhe pelo aviso do sistema. Não é "offline" — é "atende
+     pelo telefone". */
+  if (!account.ws && !temToken(account.hero)) return "offline";
 
   let status = "available";
 
@@ -88,6 +93,19 @@ function personOf(account) {
   };
 }
 
+/*
+  Um herói conhecido tem sempre conta: se o servidor reiniciou (e a memória de
+  quem entrou se perdeu) mas o telemóvel dele continua registado, ele segue na
+  roda como alcançável.
+*/
+function contaDe(hero) {
+  return users.get(hero) ?? { hero, ws: null, tab: null, inbox: [] };
+}
+
+function pessoaDe(hero) {
+  return personOf(contaDe(hero));
+}
+
 /** A roda inteira: todos os heróis, com o estado de quem está por trás. */
 function rosterFor(self) {
   const people = [...HEROES.values()]
@@ -97,7 +115,7 @@ function rosterFor(self) {
       return {
         hero: theme.id,
         name: theme.name,
-        status: statusOf(account),
+        status: statusOf(account ?? contaDe(theme.id)),
         // a posição que cada herói partilhou (o mapa mostra todos os que têm)
         place: account?.place ?? null,
       };
@@ -460,6 +478,21 @@ wss.on("connection", (ws) => {
       // processo reiniciado: o que estava por entregar na base sai agora
       if (novo && temBase) entregarPendentes(ws, hero);
 
+      /* Havia uma chamada a tocar para este herói enquanto a app estava
+         fechada? Chegou aqui pelo aviso do telefone — o convite aparece agora. */
+      for (const call of calls.values()) {
+        if (!call.invited.has(hero)) continue;
+
+        send(ws, {
+          t: "incoming",
+          callId: call.id,
+          from: pessoaDe(call.from),
+          kind: call.kind,
+          place: call.place,
+          members: membersOf(call),
+        });
+      }
+
       broadcastPresence();
       return;
     }
@@ -552,8 +585,9 @@ wss.on("connection", (ws) => {
           return;
         }
 
-        const livres = [];
-        const fora = [];
+        const livres = []; // app aberta: toca já, por WebSocket
+        const avisados = []; // app fechada, mas o telemóvel toca pelo aviso
+        const fora = []; // sem app aberta e sem telemóvel registado
 
         for (const hero of queridos) {
           const outro = users.get(hero);
@@ -561,13 +595,20 @@ wss.on("connection", (ws) => {
             (call) => inCall(call, hero) || call.invited.has(hero)
           );
 
-          if (outro?.ws && !ocupado) livres.push(hero);
-          else fora.push({ hero, name: HEROES.get(hero).name, status: statusOf(outro) });
+          if (ocupado) fora.push({ hero, name: HEROES.get(hero).name, status: statusOf(outro) });
+          else if (outro?.ws) livres.push(hero);
+          else if (temToken(hero)) avisados.push(hero);
+          else fora.push({ hero, name: HEROES.get(hero).name, status: "offline" });
         }
 
-        if (!livres.length) {
-          // todos fora da app: deixa o aviso no telefone deles, para saberem
-          // que alguém tentou ligar (e poderem abrir a app)
+        /* Chamados a sério: quem está na app agora e quem tem o telemóvel
+           registado. Os dois entram como convidados — a diferença é só por onde
+           o convite viaja (WebSocket ou aviso do sistema). */
+        const chamados = [...livres, ...avisados];
+
+        if (!chamados.length) {
+          // ninguém alcançável: deixa o aviso em quem tenha telemóvel, para ao
+          // menos saber que alguém tentou ligar
           for (const alvo of fora) {
             avisar(alvo.hero, {
               titulo: `Chamada de ${personOf(user).name}`,
@@ -579,11 +620,23 @@ wss.on("connection", (ws) => {
             }).catch(() => {});
           }
 
-          fail(ws, "Todos os heróis marcados estão offline ou em chamada.");
+          fail(ws, "Os heróis marcados estão em chamada ou sem a app registada.");
           return;
         }
 
-        // quem está fora também fica a saber que foi chamado
+        // quem está com a app fechada é avisado pelo telefone
+        for (const hero of avisados) {
+          avisar(hero, {
+            titulo: `Chamada de ${personOf(user).name}`,
+            corpo:
+              message.kind === "voice"
+                ? "Está a ligar-te agora. Toca para atender."
+                : "Videochamada agora. Toca para atender.",
+            dados: { tipo: "chamada", de: user.hero },
+          }).catch(() => {});
+        }
+
+        // quem não tem telemóvel registado também fica a saber
         for (const alvo of fora) {
           avisar(alvo.hero, {
             titulo: `Chamada de ${personOf(user).name}`,
@@ -597,7 +650,7 @@ wss.on("connection", (ws) => {
           from: user.hero,
           kind: message.kind === "voice" ? "voice" : "video",
           place: safePlace(message.place),
-          invited: new Set(livres),
+          invited: new Set(chamados),
           accepted: new Set(),
           createdAt: Date.now(),
         };
@@ -619,7 +672,7 @@ wss.on("connection", (ws) => {
           kind: call.kind,
           place: call.place,
           members: membersOf(call),
-          targets: livres.map((hero) => personOf(users.get(hero))),
+          targets: chamados.map(pessoaDe),
           skipped: fora,
         });
 

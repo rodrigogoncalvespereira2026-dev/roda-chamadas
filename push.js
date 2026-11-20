@@ -14,7 +14,7 @@
 */
 
 import { createSign } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 /** Conta de serviço do Firebase (só depois de ligarPush). */
 let conta = null;
@@ -24,6 +24,49 @@ let projeto = null;
 const tokens = new Map();
 /** token → hero, para um aparelho não ficar em dois heróis */
 const dono = new Map();
+
+/**
+ * Os tokens ficam também em ficheiro.
+ *
+ * Em memória só, cada reinício do servidor (deploy, queda, soneca do Render)
+ * apagava tudo e cada herói tinha de abrir a app outra vez para voltar a ser
+ * avisado. Com o ficheiro, o herói continua alcançável sem abrir nada.
+ */
+const FICHEIRO_TOKENS = ".push-tokens.json";
+
+function carregarTokens() {
+  let guardado;
+
+  try {
+    guardado = JSON.parse(readFileSync(FICHEIRO_TOKENS, "utf8"));
+  } catch {
+    return; // primeiro arranque, ou ficheiro ilegivel: comeca vazio
+  }
+
+  for (const [hero, lista] of Object.entries(guardado ?? {})) {
+    if (!Array.isArray(lista)) continue;
+
+    const validos = lista.filter((token) => typeof token === "string" && token.length > 20);
+    if (!validos.length) continue;
+
+    tokens.set(hero, new Set(validos));
+    for (const token of validos) dono.set(token, hero);
+  }
+}
+
+function gravarTokens() {
+  const guardar = Object.fromEntries(
+    [...tokens].map(([hero, lista]) => [hero, [...lista]])
+  );
+
+  try {
+    writeFileSync(FICHEIRO_TOKENS, JSON.stringify(guardar));
+  } catch (erro) {
+    console.error("[push] não consegui guardar os tokens:", erro?.message ?? erro);
+  }
+}
+
+carregarTokens();
 
 /** Token de acesso em cache, com a validade que o Google disser. */
 let acesso = null;
@@ -130,6 +173,14 @@ export const tokensDe = (hero) => [...(tokens.get(hero) ?? [])];
 /** Quantos aparelhos estão registados (para o /healthz). */
 export const totalTokens = () => [...tokens.values()].reduce((soma, lista) => soma + lista.size, 0);
 
+/**
+ * O herói tem um telemóvel registado?
+ *
+ * É isto que o mantém alcançável com a app fechada: sem WebSocket, mas com
+ * token, a chamada vai pelo telefone em vez de se perder.
+ */
+export const temToken = (hero) => Boolean(tokens.get(hero)?.size);
+
 /** Um aparelho passa a receber avisos em nome deste herói. */
 export function guardarToken(hero, token) {
   if (!hero || typeof token !== "string" || token.length < 20) return;
@@ -140,6 +191,7 @@ export function guardarToken(hero, token) {
   if (!tokens.has(hero)) tokens.set(hero, new Set());
   tokens.get(hero).add(token);
   dono.set(token, hero);
+  gravarTokens();
 }
 
 /** O aparelho deixou de valer (app desinstalada, token renovado). */
@@ -147,6 +199,7 @@ export function esquecerToken(hero, token) {
   tokens.get(hero)?.delete(token);
   if (!tokens.get(hero)?.size) tokens.delete(hero);
   dono.delete(token);
+  gravarTokens();
 }
 
 function base64url(valor) {

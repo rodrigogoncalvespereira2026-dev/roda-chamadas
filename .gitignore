@@ -6,3 +6,6 @@ android/keystore
 data
 .dev-server.log
 .preview-server.log
+
+# tokens de push guardados pelo servidor (não são código)
+.push-tokens.json

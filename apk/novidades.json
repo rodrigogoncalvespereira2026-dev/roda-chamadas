@@ -1,4 +1,10 @@
 {
+  "49": [
+    "Um herói com o telemóvel registado fica online na roda mesmo com a app fechada — a chamada chega-lhe pelo aviso do sistema",
+    "Quem abre a app depois de ser chamado encontra o convite à espera, com a chamada ainda a tocar",
+    "O registo do aparelho já não se perde quando o servidor reinicia",
+    "O registo é reenviado sempre que a app reconecta, para os avisos não falharem"
+  ],
   "48": [
     "Avisos com a app fechada: chamar um herói que está fora da app passa a tocar o telemóvel dele",
     "Ao abrir, a app pede permissão de notificações e regista o aparelho no Firebase",

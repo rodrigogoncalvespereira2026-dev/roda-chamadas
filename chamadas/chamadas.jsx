@@ -153,6 +153,8 @@ function CallsApp() {
   const toqueRef = useRef(null);
   /* token do aparelho para os avisos com a app fechada (só no APK) */
   const pushTokenRef = useRef("");
+  /* o mesmo token como estado: se chegar depois do join, é preciso reenviá-lo */
+  const [pushToken, setPushToken] = useState("");
   /* a lista de marcados à mão: um toque duplo depressa não espera pelo render */
   const selecionadosRef = useRef([]);
 
@@ -414,6 +416,13 @@ function CallsApp() {
         setCall(null);
         setEscolhido(null);
         setIncoming([]);
+
+        // Reinício do servidor (ou o herói a entrar noutro aparelho): o registo
+        // do telemóvel volta a ser entregue. Sem isto, quem já tinha o token
+        // deixava de receber avisos até reabrir a app duas vezes.
+        if (pushTokenRef.current) {
+          rt.send("push-token", { token: pushTokenRef.current });
+        }
       })
     );
 
@@ -588,13 +597,14 @@ function CallsApp() {
   useEffect(() => {
     prepararPush((token) => {
       pushTokenRef.current = token;
+      setPushToken(token);
     });
   }, []);
 
   useEffect(() => {
-    if (!me || !pushTokenRef.current) return;
-    rtRef.current.send("push-token", { token: pushTokenRef.current });
-  }, [me]);
+    if (!me || !pushToken) return;
+    rtRef.current.send("push-token", { token: pushToken });
+  }, [me, pushToken]);
 
   /* O primeiro toque no ecrã acorda o áudio: os navegadores só deixam tocar
      depois de um gesto, e o toque que abre a app já serve. */
