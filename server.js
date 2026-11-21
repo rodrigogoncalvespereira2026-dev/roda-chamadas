@@ -280,6 +280,9 @@ const TIPOS = {
   ".webmanifest": "application/manifest+json; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  // os fundos de cada herói são WebP: sem este tipo o iPhone recebia-os como
+  // octet-stream e o `background-image` não os desenhava
+  ".webp": "image/webp",
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
 };
