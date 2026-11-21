@@ -300,6 +300,29 @@ body {
   filter: drop-shadow(0 0 5px color-mix(in oklch, currentColor 60%, transparent));
 }
 
+/* os símbolos grandes respiram: palco da chamada e chamada a receber */
+@keyframes simbolo-brilhar {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 5px color-mix(in oklch, currentColor 50%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 13px color-mix(in oklch, currentColor 90%, transparent));
+  }
+}
+
+.palco__bolha > svg,
+.ring__avatar svg {
+  animation: simbolo-brilhar 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palco__bolha > svg,
+  .ring__avatar svg {
+    animation: none;
+  }
+}
+
 /* ---------- roda ---------- */
 
 .calls__wheel {
@@ -387,7 +410,7 @@ body {
   height: 24px;
   border-radius: 50%;
   background: color-mix(in oklch, var(--accent-base) 20%, transparent);
-  color: var(--accent80);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
 }
 
 .calls__pickIcon svg {
@@ -434,7 +457,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--overlay);
-  color: var(--accent80);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
 }
 
 .calls__avatar svg {
@@ -883,7 +906,7 @@ body {
   height: 48px;
   background: color-mix(in oklch, var(--accent-base) 12%, transparent);
   border-color: color-mix(in oklch, var(--accent-base) 26%, transparent);
-  color: var(--accent80);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
 }
 
 .calls__contact:hover {
@@ -1180,7 +1203,7 @@ body {
   height: 22px;
   border-radius: 50%;
   background: color-mix(in oklch, var(--accent-base) 18%, transparent);
-  color: var(--accent100);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
 }
 
 .call__teammateIcon svg {
@@ -1286,7 +1309,7 @@ body {
     color-mix(in oklch, var(--accent-base) 24%, transparent),
     #080808 74%
   );
-  color: var(--accent80);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
   box-shadow:
     0 0 calc(24px + var(--nivel, 0) * 40px) color-mix(in oklch, var(--accent-base) 30%, transparent),
     inset 0 0 40px color-mix(in oklch, var(--accent-base) 16%, transparent);
@@ -1413,7 +1436,7 @@ body {
     color-mix(in oklch, var(--accent-base) 22%, transparent),
     #090909 76%
   );
-  color: var(--accent80);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
   box-shadow: 0 0 16px color-mix(in oklch, var(--accent-base) 24%, transparent);
 }
 
@@ -2538,7 +2561,7 @@ body.mapaCheio .calls__panel {
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #0c0c0c;
-  color: var(--accent80);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
   font: inherit;
   font-size: 11px;
   cursor: pointer;
@@ -2581,7 +2604,7 @@ body.mapaCheio .calls__panel {
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--surface);
-  color: var(--accent80);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
 }
 
 .calls__meAvatar svg {
@@ -3347,7 +3370,7 @@ body.mapaCheio .calls__panel {
     color-mix(in oklch, var(--accent-base) 30%, transparent),
     #0a0a0a 72%
   );
-  color: var(--accent80);
+  color: color-mix(in oklch, var(--accent-base) 55%, white);
   box-shadow:
     0 0 70px color-mix(in oklch, var(--accent-base) 40%, transparent),
     inset 0 0 40px color-mix(in oklch, var(--accent-base) 20%, transparent);

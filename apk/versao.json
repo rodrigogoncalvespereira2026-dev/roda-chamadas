@@ -1,8 +1,9 @@
 {
-  "versao": "1.57",
-  "codigo": 58,
+  "versao": "1.58",
+  "codigo": 59,
   "novidades": [
-    "O interior dos círculos da roda ficou mais transparente: deixa ver o fundo da página",
-    "Os símbolos e o brilho de cada herói ficam iguais ao que já estavam"
+    "Os símbolos ganharam um brilho que pulsa devagar, como um comunicador aceso",
+    "Os heróis de cor escura (Pavão, Boi, Cavalo, Tigre e outros) ficaram com o símbolo muito mais claro",
+    "O pulsar pára enquanto a roda está a ser girada e não aparece a quem pediu menos movimento no sistema"
   ]
 }
