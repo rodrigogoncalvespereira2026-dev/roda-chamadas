@@ -618,6 +618,11 @@ wss.on("connection", (ws) => {
            o convite viaja (WebSocket ou aviso do sistema). */
         const chamados = [...livres, ...avisados];
 
+        // o id nasce já aqui: os avisos levam-no, e é ele que dá a cada chamada
+        // uma notificação própria no telemóvel (sem ele, a segunda chamada só
+        // atualizava a primeira e ficava em silêncio)
+        const callId = randomUUID();
+
         if (!chamados.length) {
           // ninguém alcançável: deixa o aviso em quem tenha telemóvel, para ao
           // menos saber que alguém tentou ligar
@@ -628,7 +633,7 @@ wss.on("connection", (ws) => {
                 message.kind === "voice"
                   ? "Tentou ligar-te no Roda de Chamadas. Abre a app para atender."
                   : "Videochamada no Roda de Chamadas. Abre a app para atender.",
-              dados: { tipo: "chamada", de: user.hero },
+              dados: { tipo: "chamada", de: user.hero, callId },
               // só dados: o APK acende o ecrã e abre a chamada
               soDados: true,
             }).catch(() => {});
@@ -646,7 +651,7 @@ wss.on("connection", (ws) => {
               message.kind === "voice"
                 ? "Está a ligar-te agora. Toca para atender."
                 : "Videochamada agora. Toca para atender.",
-            dados: { tipo: "chamada", de: user.hero },
+            dados: { tipo: "chamada", de: user.hero, callId },
             soDados: true,
           }).catch(() => {});
         }
@@ -656,13 +661,13 @@ wss.on("connection", (ws) => {
           avisar(alvo.hero, {
             titulo: `Chamada de ${personOf(user).name}`,
             corpo: "Tentou ligar-te no Roda de Chamadas. Abre a app para atender.",
-            dados: { tipo: "chamada", de: user.hero },
+            dados: { tipo: "chamada", de: user.hero, callId },
             soDados: true,
           }).catch(() => {});
         }
 
         const call = {
-          id: randomUUID(),
+          id: callId,
           from: user.hero,
           kind: message.kind === "voice" ? "voice" : "video",
           place: safePlace(message.place),
@@ -690,7 +695,7 @@ wss.on("connection", (ws) => {
                 message.kind === "voice"
                   ? "Está a ligar-te agora. Toca para atender."
                   : "Videochamada agora. Toca para atender.",
-              dados: { tipo: "chamada", de: user.hero },
+              dados: { tipo: "chamada", de: user.hero, callId },
               soDados: false,
             }).catch(() => {});
           }, 8000);

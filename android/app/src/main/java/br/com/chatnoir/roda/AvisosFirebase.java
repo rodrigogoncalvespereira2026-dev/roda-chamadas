@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.os.PowerManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -59,7 +60,10 @@ public class AvisosFirebase extends FirebaseMessagingService {
     abrir.putExtra("chamada", chamada);
     if (de != null) abrir.putExtra("de", de);
 
-    int id = idDoAviso(de, titulo);
+    String callId = dados.get("callId");
+    int id = idDoAviso(callId, de, titulo);
+
+    if (chamada) limparAvisoAnterior(id);
 
     int bandeiras = PendingIntent.FLAG_UPDATE_CURRENT;
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) bandeiras |= PendingIntent.FLAG_IMMUTABLE;
@@ -85,6 +89,8 @@ public class AvisosFirebase extends FirebaseMessagingService {
          uma chamada a sério, mesmo com o telemóvel bloqueado no bolso. */
       construtor.setFullScreenIntent(tocar, true);
       acenderEcraSePreciso();
+      // uma chamada que já ninguém atende deixa de fazer sentido
+      construtor.setTimeoutAfter(60000);
       construtor.setVibrate(new long[] { 0, 800, 400, 800, 400, 800 });
 
       Bitmap simbolo = simboloDoHeroi(de);
@@ -132,10 +138,42 @@ public class AvisosFirebase extends FirebaseMessagingService {
     return valor == null || valor.isEmpty() ? porOmissao : valor;
   }
 
-  /** Número estável por aviso: dois avisos da mesma pessoa não se sobrepõem. */
-  private static int idDoAviso(String de, String titulo) {
-    String chave = (de == null ? "" : de) + "|" + titulo;
-    return 900000 + Math.abs(chave.hashCode() % 90000);
+  /**
+   * Um aviso por chamada.
+   *
+   * O identificador vem do id da chamada, com o mesmo cálculo que o JavaScript
+   * usa em chamadas/avisos.js: assim cada chamada é uma notificação nova (a que
+   * chega depois não é "uma atualização" da anterior, que o Android mostraria em
+   * silêncio), e quando a chamada acaba a app cancela-a pelo mesmo número.
+   */
+  private static int idDoAviso(String callId, String de, String titulo) {
+    String chave =
+      callId != null && !callId.isEmpty()
+        ? callId
+        : (de == null ? "" : de) + "|" + titulo;
+
+    long h = 7;
+    for (int i = 0; i < chave.length(); i++) {
+      h = (h * 31 + chave.charAt(i)) % 2147483647L;
+    }
+
+    return h == 0 ? 1 : (int) h;
+  }
+
+  /** Tira o aviso da chamada anterior, para a barra não encher de avisos velhos. */
+  private void limparAvisoAnterior(int id) {
+    SharedPreferences guardado = getSharedPreferences("roda", MODE_PRIVATE);
+    int anterior = guardado.getInt("aviso-chamada", 0);
+
+    if (anterior != 0 && anterior != id) {
+      try {
+        NotificationManagerCompat.from(this).cancel(anterior);
+      } catch (Exception ignorado) {
+        // nada a cancelar
+      }
+    }
+
+    guardado.edit().putInt("aviso-chamada", id).apply();
   }
 
   private int iconePequeno() {

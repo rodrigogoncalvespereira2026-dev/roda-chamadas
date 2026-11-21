@@ -1,4 +1,9 @@
 {
+  "52": [
+    "Cada chamada tem agora o seu próprio aviso: antes, a partir da segunda, o Android mostrava-a em silêncio e o ecrã não acendia",
+    "O aviso da chamada anterior é limpo quando chega uma nova, e desaparece sozinho ao fim de um minuto",
+    "Ao atender ou recusar, o aviso sai da barra no mesmo instante"
+  ],
   "51": [
     "O ecrã acende quando te ligam, mesmo que o sistema não deixe a chamada abrir em ecrã inteiro",
     "No Android 14 ou mais novo, a app pede uma vez autorização para as notificações em ecrã inteiro",
