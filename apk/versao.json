@@ -1,9 +1,9 @@
 {
-  "versao": "1.53",
-  "codigo": 54,
+  "versao": "1.54",
+  "codigo": 55,
   "novidades": [
-    "Cada herói tem agora o seu próprio fundo: a arte do ecrã muda quando a roda gira",
-    "O mesmo fundo aparece na entrada, na chamada a receber e dentro da chamada",
-    "Os fundos ficam dentro da app, por isso não gastam dados nem atrasam a abertura"
+    "Os símbolos da joaninha, raposa, serpente, dragão, coelho e galo ficaram iguais aos do comunicador",
+    "O símbolo novo aparece na roda, nas listas, nos círculos da chamada e no aviso do telemóvel",
+    "As artes de fundo continuam a acompanhar o herói em foco"
   ]
 }
