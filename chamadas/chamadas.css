@@ -80,6 +80,11 @@ body {
   padding: 56px 20px 80px;
 }
 
+/*
+  A arte do herói (--fundo, vinda do tema) fica por baixo de um véu escuro:
+  é o fundo da página, mas quem manda na leitura continua a ser o texto. Os
+  brilhos do acento entram por cima da imagem, para a cor não se perder.
+*/
 .calls::before {
   content: "";
   position: fixed;
@@ -87,8 +92,15 @@ body {
   z-index: 0;
   pointer-events: none;
   background:
+    linear-gradient(
+      180deg,
+      rgba(4, 5, 5, 0.9) 0%,
+      rgba(4, 5, 5, 0.72) 42%,
+      rgba(4, 5, 5, 0.94) 100%
+    ),
     radial-gradient(900px 420px at 50% -10%, var(--bg-glow), transparent 72%),
     radial-gradient(700px 520px at 50% 112%, var(--overlay), transparent 70%),
+    var(--fundo, none) center / cover no-repeat,
     var(--bg-dark);
 }
 
@@ -951,7 +963,15 @@ body {
   justify-content: center;
   gap: 12px;
   padding: 40px 20px;
-  background: color-mix(in oklch, var(--accent-base) 6%, #050505);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(3, 4, 4, 0.86) 0%,
+      rgba(3, 4, 4, 0.72) 46%,
+      rgba(3, 4, 4, 0.95) 100%
+    ),
+    var(--fundo, none) center / cover no-repeat,
+    color-mix(in oklch, var(--accent-base) 6%, #050505);
   animation: call-in 0.22s ease-out both;
 }
 
@@ -965,7 +985,10 @@ body {
   border: 1px solid var(--line);
   border-radius: 26px;
   overflow: hidden;
-  background: color-mix(in oklch, var(--accent-base) 7%, #080808);
+  background:
+    linear-gradient(180deg, rgba(3, 4, 4, 0.86) 0%, rgba(3, 4, 4, 0.95) 100%),
+    var(--fundo, none) center / cover no-repeat,
+    color-mix(in oklch, var(--accent-base) 7%, #080808);
 }
 
 .call__glow {
@@ -3218,6 +3241,8 @@ body.mapaCheio .calls__panel {
       color-mix(in oklch, var(--accent-base) 22%, transparent),
       transparent 66%
     ),
+    linear-gradient(180deg, rgba(4, 5, 5, 0.8) 0%, rgba(4, 5, 5, 0.93) 100%),
+    var(--fundo, none) center / cover no-repeat,
     #060606;
   animation: call-in 0.24s ease-out both;
 }

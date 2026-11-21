@@ -886,6 +886,8 @@ function CallsApp() {
   }
 
   const accent = themeById(focus?.hero ?? identity.hero).accent;
+  /* a arte do herói em foco: a página inteira muda quando a roda gira */
+  const fundo = themeById(focus?.hero ?? identity.hero).fundo;
   const invite = incoming[0] ?? null;
   const callMembers = call?.members ?? [];
 
@@ -907,7 +909,7 @@ function CallsApp() {
             ? "calls--roda"
             : "calls--barra",
       ].join(" ")}
-      style={{ "--accent-base": accent }}
+      style={{ "--accent-base": accent, "--fundo": `url("${fundo}")` }}
     >
       <header className="calls__head">
         {definicoes ? (

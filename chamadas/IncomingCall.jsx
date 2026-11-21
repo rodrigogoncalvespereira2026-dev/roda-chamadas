@@ -13,13 +13,14 @@ import { PhoneCallIcon, PinIcon } from "./icons";
  * aparece no topo.
  */
 export default function IncomingCall({ invite, queued = 0, myPlace, onAccept, onReject }) {
-  const accent = themeById(invite.from.hero).accent;
+  const tema = themeById(invite.from.hero);
+  const accent = tema.accent;
   const km = distanceKm(myPlace, invite.place);
 
   return (
     <div
       className="ring"
-      style={{ "--accent-base": accent }}
+      style={{ "--accent-base": accent, "--fundo": `url("${tema.fundo}")` }}
       role="dialog"
       aria-modal="true"
       aria-label={`Chamada de ${invite.from.name}`}

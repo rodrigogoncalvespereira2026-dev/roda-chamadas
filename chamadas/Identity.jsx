@@ -67,7 +67,13 @@ export default function Identity({ onEnter, notice }) {
   };
 
   return (
-    <main className="calls calls--gate" style={{ "--accent-base": themeById(hero).accent }}>
+    <main
+      className="calls calls--gate"
+      style={{
+        "--accent-base": themeById(hero).accent,
+        "--fundo": `url("${themeById(hero).fundo}")`,
+      }}
+    >
       <header className="calls__head">
         <p className="calls__eyebrow">Sistema Miraculous</p>
         <h1>Roda de Chamadas</h1>

@@ -262,7 +262,8 @@ export default function CallScreen({
   onMap,
   onEnd,
 }) {
-  const accent = themeById(call.members[0]?.hero ?? "cat").accent;
+  const tema = themeById(call.members[0]?.hero ?? "cat");
+  const accent = tema.accent;
   const localVideo = Boolean(local?.getVideoTracks().some((track) => track.enabled));
   /* Largura do meu vídeo: 0 = a câmera deu faixa mas não está a enviar imagem. */
   const [larguraLocal, setLarguraLocal] = useState(null);
@@ -315,7 +316,7 @@ export default function CallScreen({
       className="call"
       data-phase={ringing ? "ringing" : "active"}
       data-controls={mostrar ? "on" : "off"}
-      style={{ "--accent-base": accent }}
+      style={{ "--accent-base": accent, "--fundo": `url("${tema.fundo}")` }}
       onPointerDown={acordar}
     >
       <div className="call__glow" aria-hidden="true" />
