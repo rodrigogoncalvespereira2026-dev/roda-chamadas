@@ -77,8 +77,8 @@
   margin: calc(var(--wheel-item-size) / -2);
   cursor: pointer;
   background: var(--wheel-surface);
-  color: var(--wheel-accent40);
-  opacity: 0.45;
+  color: var(--wheel-accent60);
+  opacity: 0.62;
   transform-style: preserve-3d;
   transform: rotateY(var(--option-angle)) translateZ(var(--wheel-radius)) rotateY(90deg);
   border: 2px solid transparent;
@@ -103,8 +103,11 @@
   width: 60%;
   height: 60%;
   color: inherit;
+  /* halo curto da própria cor: um filtro só, para a roda girar sem arrastar */
+  filter: drop-shadow(0 0 6px color-mix(in oklch, currentColor 70%, transparent));
   transition:
     color 0.3s,
+    filter 0.3s,
     transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
@@ -112,17 +115,24 @@
   border-color: var(--wheel-accent60);
   color: var(--wheel-accent80);
   background: var(--wheel-accent-overlay);
-  opacity: 0.75;
+  opacity: 0.88;
 }
 
 .theme-wheel__option.is-active {
   opacity: 1;
   border-color: var(--wheel-accent80);
-  color: var(--wheel-accent100);
+  color: var(--wheel-accent80);
   background: var(--wheel-accent-overlay);
-  box-shadow: 0 0 36px var(--wheel-accent-overlay);
+  box-shadow: 0 0 42px var(--wheel-accent-overlay-hover);
   transform: rotateY(var(--option-angle)) translateZ(calc(var(--wheel-radius) * 1.3))
     rotateY(var(--option-facing)) scale(1.12);
+}
+
+/* o escolhido brilha mais: um segundo halo, já com a cor cheia */
+.theme-wheel__option.is-active svg {
+  filter:
+    drop-shadow(0 0 7px currentColor)
+    drop-shadow(0 0 18px color-mix(in oklch, var(--wheel-accent) 55%, transparent));
 }
 
 .theme-wheel__option.is-selected::after {

@@ -283,6 +283,23 @@ body {
   }
 }
 
+/* ---------- brilho dos símbolos ----------
+  O símbolo herda a cor do círculo onde vive e ganha um halo curto da própria
+  cor. Um filtro só, pequeno, porque há ecrãs com muitos símbolos ao mesmo
+  tempo (a roda tem os vinte).
+*/
+.calls__avatar svg,
+.calls__pickIcon svg,
+.calls__meAvatar svg,
+.calls__idleIcon svg,
+.gate__hero svg,
+.palco__bolha > svg,
+.palco__satelite > svg,
+.call__teammateIcon svg,
+.ring__avatar svg {
+  filter: drop-shadow(0 0 5px color-mix(in oklch, currentColor 60%, transparent));
+}
+
 /* ---------- roda ---------- */
 
 .calls__wheel {
@@ -370,7 +387,7 @@ body {
   height: 24px;
   border-radius: 50%;
   background: color-mix(in oklch, var(--accent-base) 20%, transparent);
-  color: var(--accent-base);
+  color: var(--accent80);
 }
 
 .calls__pickIcon svg {
@@ -417,7 +434,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--overlay);
-  color: var(--accent100);
+  color: var(--accent80);
 }
 
 .calls__avatar svg {
@@ -866,6 +883,7 @@ body {
   height: 48px;
   background: color-mix(in oklch, var(--accent-base) 12%, transparent);
   border-color: color-mix(in oklch, var(--accent-base) 26%, transparent);
+  color: var(--accent80);
 }
 
 .calls__contact:hover {
@@ -1268,7 +1286,7 @@ body {
     color-mix(in oklch, var(--accent-base) 24%, transparent),
     #080808 74%
   );
-  color: var(--accent100);
+  color: var(--accent80);
   box-shadow:
     0 0 calc(24px + var(--nivel, 0) * 40px) color-mix(in oklch, var(--accent-base) 30%, transparent),
     inset 0 0 40px color-mix(in oklch, var(--accent-base) 16%, transparent);
@@ -1395,7 +1413,7 @@ body {
     color-mix(in oklch, var(--accent-base) 22%, transparent),
     #090909 76%
   );
-  color: var(--accent100);
+  color: var(--accent80);
   box-shadow: 0 0 16px color-mix(in oklch, var(--accent-base) 24%, transparent);
 }
 
@@ -2520,7 +2538,7 @@ body.mapaCheio .calls__panel {
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #0c0c0c;
-  color: var(--accent60);
+  color: var(--accent80);
   font: inherit;
   font-size: 11px;
   cursor: pointer;
@@ -2563,7 +2581,7 @@ body.mapaCheio .calls__panel {
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--surface);
-  color: var(--accent100);
+  color: var(--accent80);
 }
 
 .calls__meAvatar svg {
@@ -3329,7 +3347,7 @@ body.mapaCheio .calls__panel {
     color-mix(in oklch, var(--accent-base) 30%, transparent),
     #0a0a0a 72%
   );
-  color: var(--accent100);
+  color: var(--accent80);
   box-shadow:
     0 0 70px color-mix(in oklch, var(--accent-base) 40%, transparent),
     inset 0 0 40px color-mix(in oklch, var(--accent-base) 20%, transparent);
