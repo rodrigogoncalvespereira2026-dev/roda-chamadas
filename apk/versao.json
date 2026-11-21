@@ -1,9 +1,8 @@
 {
-  "versao": "1.56",
-  "codigo": 57,
+  "versao": "1.57",
+  "codigo": 58,
   "novidades": [
-    "Os símbolos ficaram mais brilhantes: cada um tem um halo da sua própria cor",
-    "Na roda, os heróis que não estão escolhidos deixaram de estar tão apagados, e o escolhido brilha mais",
-    "O mesmo brilho aparece nas listas, nos círculos da chamada e na entrada"
+    "O interior dos círculos da roda ficou mais transparente: deixa ver o fundo da página",
+    "Os símbolos e o brilho de cada herói ficam iguais ao que já estavam"
   ]
 }
