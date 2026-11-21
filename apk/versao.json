@@ -1,9 +1,9 @@
 {
-  "versao": "1.58",
-  "codigo": 59,
+  "versao": "1.59",
+  "codigo": 60,
   "novidades": [
-    "Os símbolos ganharam um brilho que pulsa devagar, como um comunicador aceso",
-    "Os heróis de cor escura (Pavão, Boi, Cavalo, Tigre e outros) ficaram com o símbolo muito mais claro",
-    "O pulsar pára enquanto a roda está a ser girada e não aparece a quem pediu menos movimento no sistema"
+    "O símbolo que aparece no telemóvel de quem recebe é agora o mesmo círculo da roda: disco escuro, aro na cor do herói e símbolo claro",
+    "As cores do aviso vêm do mesmo sítio que as da roda, por isso não voltam a ficar diferentes",
+    "O símbolo continua a aparecer no ecrã de bloqueio e nos relógios"
   ]
 }
