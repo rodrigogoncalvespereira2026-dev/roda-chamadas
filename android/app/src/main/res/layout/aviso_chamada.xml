@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  O aviso de chamada desenhado por nós: o símbolo de quem liga em grande, o nome
+  e as duas acções. É isto que aparece no ecrã de bloqueio quando o sistema não
+  deixa a app abrir em ecrã inteiro.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#CC160F2B"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/aviso_simbolo"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:contentDescription="@string/aviso_chamada"
+            android:scaleType="centerCrop" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/aviso_titulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/aviso_corpo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#DDE7DFFF"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/aviso_dispensar"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:background="#33FFFFFF"
+            android:text="@string/aviso_dispensar"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFFFF" />
+
+        <Button
+            android:id="@+id/aviso_atender"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="#FFC2185B"
+            android:text="@string/aviso_atender"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFFFF" />
+    </LinearLayout>
+</LinearLayout>

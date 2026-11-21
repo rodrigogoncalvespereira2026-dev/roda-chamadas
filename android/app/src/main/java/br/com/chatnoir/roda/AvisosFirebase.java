@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.os.PowerManager;
+import android.widget.RemoteViews;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
@@ -94,7 +95,21 @@ public class AvisosFirebase extends FirebaseMessagingService {
       construtor.setVibrate(new long[] { 0, 800, 400, 800, 400, 800 });
 
       Bitmap simbolo = simboloDoHeroi(de);
-      if (simbolo != null) construtor.setLargeIcon(simbolo);
+      if (simbolo != null) {
+        construtor.setLargeIcon(simbolo);
+
+        /* Cartão próprio: o símbolo do herói em grande e os botões. No ecrã de
+           bloqueio, o aviso normal do Android mostra só o ícone pequeno — e o
+           que se quer ver é quem está a ligar. */
+        try {
+          RemoteViews cartao = cartaoDaChamada(titulo, corpo, simbolo, tocar, id);
+          construtor.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+          construtor.setCustomContentView(cartao);
+          construtor.setCustomBigContentView(cartao);
+        } catch (Exception semCartao) {
+          // fica o aviso normal, com o símbolo na imagem grande
+        }
+      }
     }
 
     try {
@@ -132,6 +147,41 @@ public class AvisosFirebase extends FirebaseMessagingService {
     } catch (Exception semLuz) {
       // sem isto, fica o aviso na barra e o som
     }
+  }
+
+  /**
+   * O cartão do aviso de chamada.
+   *
+   * Em RemoteViews porque quem o desenha é o sistema, fora da app: a mesma
+   * vista serve para a barra e para o ecrã de bloqueio. "Atender" abre a app
+   * (que já mostra o convite à espera); "Dispensar" só tira o aviso.
+   */
+  private RemoteViews cartaoDaChamada(
+    String titulo,
+    String corpo,
+    Bitmap simbolo,
+    PendingIntent atender,
+    int id
+  ) {
+    RemoteViews vistas = new RemoteViews(getPackageName(), R.layout.aviso_chamada);
+
+    vistas.setTextViewText(R.id.aviso_titulo, titulo);
+    vistas.setTextViewText(R.id.aviso_corpo, corpo);
+    vistas.setImageViewBitmap(R.id.aviso_simbolo, simbolo);
+    vistas.setOnClickPendingIntent(R.id.aviso_atender, atender);
+
+    Intent fechar = new Intent(this, DispensarAviso.class);
+    fechar.putExtra("id", id);
+
+    int bandeiras = PendingIntent.FLAG_UPDATE_CURRENT;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) bandeiras |= PendingIntent.FLAG_IMMUTABLE;
+
+    vistas.setOnClickPendingIntent(
+      R.id.aviso_dispensar,
+      PendingIntent.getBroadcast(this, id, fechar, bandeiras)
+    );
+
+    return vistas;
   }
 
   private static String emTexto(String valor, String porOmissao) {

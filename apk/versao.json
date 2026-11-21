@@ -1,9 +1,9 @@
 {
-  "versao": "1.51",
-  "codigo": 52,
+  "versao": "1.52",
+  "codigo": 53,
   "novidades": [
-    "Cada chamada tem agora o seu próprio aviso: antes, a partir da segunda, o Android mostrava-a em silêncio e o ecrã não acendia",
-    "O aviso da chamada anterior é limpo quando chega uma nova, e desaparece sozinho ao fim de um minuto",
-    "Ao atender ou recusar, o aviso sai da barra no mesmo instante"
+    "O aviso de chamada passa a mostrar o símbolo do herói que te está a ligar, em grande, mesmo no ecrã de bloqueio",
+    "O aviso traz os botões Atender e Dispensar, para não teres de procurar nada",
+    "A app pede outra vez a autorização de ecrã inteiro enquanto ela não estiver dada"
   ]
 }

@@ -4,4 +4,9 @@
     <string name="title_activity_main">Roda de Chamadas</string>
     <string name="package_name">br.com.chatnoir.roda</string>
     <string name="custom_url_scheme">br.com.chatnoir.roda</string>
+
+    <!-- aviso de chamada (cartão com o símbolo do herói) -->
+    <string name="aviso_chamada">Quem está a chamar</string>
+    <string name="aviso_atender">Atender</string>
+    <string name="aviso_dispensar">Dispensar</string>
 </resources>

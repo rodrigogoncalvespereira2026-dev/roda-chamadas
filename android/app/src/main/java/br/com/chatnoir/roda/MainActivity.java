@@ -3,7 +3,6 @@ package br.com.chatnoir.roda;
 import android.Manifest;
 import android.app.NotificationManager;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -46,9 +45,9 @@ public class MainActivity extends BridgeActivity {
     NotificationManager gestor = getSystemService(NotificationManager.class);
     if (gestor == null || gestor.canUseFullScreenIntent()) return;
 
-    SharedPreferences guardado = getSharedPreferences("roda", MODE_PRIVATE);
-    if (guardado.getBoolean("ecra-inteiro-pedido", false)) return;
-    guardado.edit().putBoolean("ecra-inteiro-pedido", true).apply();
+    // se a app abriu por causa de uma chamada, mostrar a chamada é o que importa
+    Intent origem = getIntent();
+    if (origem != null && origem.getBooleanExtra("chamada", false)) return;
 
     try {
       startActivity(

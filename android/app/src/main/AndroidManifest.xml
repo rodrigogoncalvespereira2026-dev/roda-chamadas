@@ -43,6 +43,11 @@
             </intent-filter>
         </service>
 
+        <!-- o botão "Dispensar" do aviso de chamada -->
+        <receiver
+            android:name=".DispensarAviso"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
