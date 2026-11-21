@@ -1,9 +1,8 @@
 {
-  "versao": "1.54",
-  "codigo": 55,
+  "versao": "1.55",
+  "codigo": 56,
   "novidades": [
-    "Os símbolos da joaninha, raposa, serpente, dragão, coelho e galo ficaram iguais aos do comunicador",
-    "O símbolo novo aparece na roda, nas listas, nos círculos da chamada e no aviso do telemóvel",
-    "As artes de fundo continuam a acompanhar o herói em foco"
+    "Os símbolos antigos voltaram: joaninha, raposa, serpente, dragão, coelho e galo estão como antes",
+    "O resto da app fica igual: fundos por herói, chamadas e avisos não mudaram"
   ]
 }
